@@ -166,7 +166,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
               transition: 'all 0.3s', borderStyle: 'dashed', borderWidth: 2, borderRadius: 16,
             }}
             onClick={handleUploadClick}>
-            <input id="resume-profile-file-inp" type="file" accept=".pdf,.docx,.doc" hidden onChange={e => {
+            <input id="resume-profile-file-inp" type="file" accept=".pdf,.docx,.doc" hidden onClick={e => e.stopPropagation()} onChange={e => {
               const f = e.target.files[0];
               if (f) {
                 setFile(f);

@@ -32,14 +32,26 @@ export default function App() {
       return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
+  const [auditData, setAuditData] = useState(() => {
+    try {
+      const saved = localStorage.getItem('hirex_audit_data');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
 
-  const handleUpdateProfile = (text, brand, dna) => {
+  const handleUpdateProfile = (text, brand, dna, audit) => {
     setResumeText(text);
     setResumeData(brand);
     setDnaData(dna);
+    setAuditData(audit);
     localStorage.setItem('hirex_resume_text', text);
     localStorage.setItem('hirex_resume_data', JSON.stringify(brand));
     localStorage.setItem('hirex_dna_data', JSON.stringify(dna));
+    if (audit) {
+      localStorage.setItem('hirex_audit_data', JSON.stringify(audit));
+    } else {
+      localStorage.removeItem('hirex_audit_data');
+    }
   };
 
   // Job Discovery params (set when coming from Career DNA)
@@ -73,6 +85,7 @@ export default function App() {
           resumeText={resumeText}
           resumeData={resumeData}
           dnaData={dnaData}
+          auditData={auditData}
           onUpdateProfile={handleUpdateProfile}
         />
       );

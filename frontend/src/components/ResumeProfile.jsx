@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { aiAPI, discoverAPI, featuresAPI, profileAPI } from '../services/api';
+import { aiAPI, discoverAPI, featuresAPI, profileAPI, jobsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import {
   Upload, FileText, Sparkles, CheckCircle, XCircle,
   Brain, TrendingUp, Target, ArrowRight, Globe, Copy, Check,
-  Briefcase, Star, Lightbulb, ExternalLink
+  Briefcase, Star, Lightbulb, ExternalLink,
+  ListChecks, Award, Bookmark, ShieldAlert
 } from 'lucide-react';
 
 function CircleScore({ value, size = 130, color = '#00c9a7' }) {
@@ -30,7 +31,7 @@ function CircleScore({ value, size = 130, color = '#00c9a7' }) {
   );
 }
 
-export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, dnaData, onUpdateProfile }) {
+export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, dnaData, auditData, onUpdateProfile }) {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [dragging, setDragging] = useState(false);
@@ -72,21 +73,26 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       const { data } = await aiAPI.analyzeResume(fd);
       toast.success('Resume parsed successfully! ✨');
       
-      // Auto-run Career DNA and Personal Brand details
-      const dnaResp = await discoverAPI.getCareerDNA({
-        resumeText: data.resumeText,
-        currentSkills: data.skillsPresent || [],
-      });
-
-      const brandResp = await featuresAPI.getCareerCard({
-        resumeText: data.resumeText,
-        userName: selectedFile.name.split('.')[0] || 'Developer',
-        skills: data.skillsPresent || [],
-        targetRole: 'Software Developer'
-      });
+      // Auto-run Career DNA, Personal Brand, and Recruiter ATS Audit
+      const [dnaResp, brandResp, auditResp] = await Promise.all([
+        discoverAPI.getCareerDNA({
+          resumeText: data.resumeText,
+          currentSkills: data.skillsPresent || [],
+        }),
+        featuresAPI.getCareerCard({
+          resumeText: data.resumeText,
+          userName: selectedFile.name.split('.')[0] || 'Developer',
+          skills: data.skillsPresent || [],
+          targetRole: 'Software Developer'
+        }),
+        discoverAPI.getATSAudit({
+          resumeText: data.resumeText,
+          skills: data.skillsPresent || [],
+        })
+      ]);
 
       // Pass up to App state to persist
-      onUpdateProfile(data.resumeText, brandResp.data, dnaResp.data);
+      onUpdateProfile(data.resumeText, brandResp.data, dnaResp.data, auditResp.data);
       
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to analyze resume');
@@ -219,6 +225,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
               <button onClick={() => setActiveSubTab('dna')} className={`tab-btn ${activeSubTab === 'dna' ? 'active' : ''}`} style={{ flex: 1 }}>
                 🧬 Career DNA
               </button>
+              <button onClick={() => setActiveSubTab('audit')} className={`tab-btn ${activeSubTab === 'audit' ? 'active' : ''}`} style={{ flex: 1 }}>
+                🛡️ Recruiter & ATS Audit
+              </button>
               <button onClick={() => setActiveSubTab('tester')} className={`tab-btn ${activeSubTab === 'tester' ? 'active' : ''}`} style={{ flex: 1 }}>
                 🎯 ATS Match Tester
               </button>
@@ -341,6 +350,214 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+            
+            {/* Recruiter & ATS Audit Tab */}
+            {activeSubTab === 'audit' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                {!auditData ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', border: '1px dashed var(--border)', borderRadius: 16 }}>
+                    <ShieldAlert size={36} color="var(--amber)" style={{ marginBottom: 12, marginLeft: 'auto', marginRight: 'auto' }} />
+                    <h3 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>No ATS Audit Data</h3>
+                    <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 20 }}>
+                      Generate a comprehensive ATS score, recruiter review, and top 20 suited roles list for your resume.
+                    </p>
+                    <button 
+                      onClick={async () => {
+                        setLoading(true);
+                        try {
+                          const { data } = await discoverAPI.getATSAudit({
+                            resumeText,
+                            skills: resumeData?.topSkills || []
+                          });
+                          onUpdateProfile(resumeText, resumeData, dnaData, data);
+                          toast.success('ATS Expert Audit complete! 🎯');
+                        } catch (err) {
+                          toast.error('Failed to run ATS Audit');
+                        }
+                        setLoading(false);
+                      }}
+                      className="btn btn-primary"
+                    >
+                      <Sparkles size={14} /> Run Recruiter & ATS Audit
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Grade and Formatting Checks */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr', gap: 16 }}>
+                      {/* Recruiter Report Card */}
+                      <div className="card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0,201,167,0.06), rgba(59,130,246,0.03))', borderColor: 'rgba(0,201,167,0.2)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--teal)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>ATS EXPERT REPORT</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: 20, border: '1px solid var(--border)' }}>
+                            <Award size={13} color="var(--teal)" />
+                            <span style={{ fontSize: 11.5, fontWeight: 800 }}>Score: {auditData.atsScore}/100</span>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+                          <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--bg-surface)', border: '2px solid var(--border-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 900, color: 'var(--teal)', boxShadow: '0 0 15px rgba(0,201,167,0.2)' }}>
+                            {auditData.atsGrade}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)' }}>ATS Grade: {auditData.atsGrade}</div>
+                            <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2 }}>Audit Status: Verified</div>
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6, letterSpacing: '0.5px' }}>RECRUITER FEEDBACK</div>
+                        <p style={{ fontSize: 13, color: 'var(--text-2)', lineHeight: 1.6, margin: 0 }}>
+                          {auditData.recruiterSummary}
+                        </p>
+                      </div>
+
+                      {/* Formatting Checklist */}
+                      <div className="card" style={{ padding: 20 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <ListChecks size={13} /> ATS FORMATTING COMPLIANCE
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          {auditData.formattingAudits?.map((item, idx) => {
+                            const isPass = item.status === 'Pass';
+                            const isFail = item.status === 'Fail';
+                            const badgeColor = isPass ? '#10b981' : isFail ? '#f43f5e' : '#f59e0b';
+                            return (
+                              <div key={idx} style={{ display: 'flex', gap: 10, padding: 10, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, alignItems: 'flex-start' }}>
+                                <div style={{ textTransform: 'uppercase', fontSize: 9, fontWeight: 800, color: badgeColor, background: `${badgeColor}15`, padding: '2px 6px', borderRadius: 4, border: `1px solid ${badgeColor}30`, flexShrink: 0, marginTop: 1.5 }}>
+                                  {item.status}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-1)' }}>{item.rule}</div>
+                                  <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2, lineHeight: 1.4 }}>{item.reason}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ATS Keyword density */}
+                    {auditData.keywordDensity && (
+                      <div className="card" style={{ padding: 20 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px', marginBottom: 12 }}>
+                          KEYWORD DENSITY AUDIT
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          {auditData.keywordDensity.map((kw, i) => (
+                            <span 
+                              key={i} 
+                              style={{ 
+                                padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6,
+                                background: kw.present ? 'rgba(16,185,129,0.06)' : 'rgba(244,63,94,0.06)',
+                                border: kw.present ? '1px solid rgba(16,185,129,0.15)' : '1px solid rgba(244,63,94,0.15)',
+                                color: kw.present ? '#10b981' : '#f43f5e'
+                              }}
+                            >
+                              {kw.present ? '✓' : '✗'} {kw.keyword} {kw.present && `(${kw.count}x)`}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recruiter Optimization (Rewritten summary & Bullets) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                      <div className="card-static" style={{ padding: 18 }}>
+                        <div style={labelStyle}>ATS-Optimized Summary</div>
+                        <p style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 12px' }}>{auditData.rewrittenSummary}</p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button onClick={() => { navigator.clipboard.writeText(auditData.rewrittenSummary); toast.success('Summary copied!'); }} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}><Copy size={12} /> Copy Summary</button>
+                        </div>
+                      </div>
+
+                      <div className="card-static" style={{ padding: 18 }}>
+                        <div style={labelStyle}>STAR-Formatted Experience Bullets</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
+                          {auditData.rewrittenBullets?.map((bullet, idx) => (
+                            <div key={idx} style={{ background: 'var(--bg-surface)', padding: 8, borderRadius: 6, border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
+                              "{bullet}"
+                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                                <button onClick={() => { navigator.clipboard.writeText(bullet); toast.success('Bullet copied!'); }} className="btn btn-ghost btn-sm" style={{ fontSize: 10, padding: '1px 4px' }}><Copy size={10} /> Copy</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* LinkedIn Top 20 Suited Roles directory */}
+                    <div className="card" style={{ padding: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px' }}>SUITED POSITIONS DIRECTORY (TOP 20)</div>
+                          <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>Job matches compiled by Senior Recruiter audit. Apply with pre-configured search queries.</p>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, maxHeight: 400, overflowY: 'auto', paddingRight: 4 }}>
+                        {auditData.suitedRoles?.map((item, idx) => (
+                          <div key={idx} style={{ padding: 14, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div style={{ fontSize: 13.5, fontWeight: 850, color: 'var(--text-1)' }}>
+                                {item.index}. {item.title}
+                              </div>
+                              <span style={{ fontSize: 10.5, color: 'var(--teal)', background: 'rgba(0,201,167,0.06)', padding: '2px 8px', borderRadius: 12, border: '1px solid rgba(0,201,167,0.15)', fontWeight: 700 }}>
+                                {item.fit}% FIT
+                              </span>
+                            </div>
+
+                            <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: 0, lineHeight: 1.4 }}>
+                              {item.reason}
+                            </p>
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                                Salary: <strong style={{ color: 'var(--text-2)' }}>{item.avgSalary}</strong>
+                              </div>
+                              <div style={{ display: 'flex', gap: 6 }}>
+                                <button 
+                                  onClick={async () => {
+                                    try {
+                                      const newJob = {
+                                        company: 'Target Opportunity',
+                                        role: item.title,
+                                        status: 'Saved',
+                                        location: 'Remote / India',
+                                        salary: item.avgSalary,
+                                        jobDescription: `Target role for ${item.title} compiled by Senior Recruiter Audit.`,
+                                        notes: `Suited role fit score: ${item.fit}%.\nReason: ${item.reason}`
+                                      };
+                                      await jobsAPI.create(newJob);
+                                      toast.success(`"${item.title}" added to Job Tracker! 🔖`);
+                                    } catch (err) {
+                                      toast.error('Failed to save target job');
+                                    }
+                                  }} 
+                                  className="btn btn-ghost btn-sm" 
+                                  style={{ padding: '2px 6px', fontSize: 10.5, gap: 4 }}
+                                >
+                                  <Bookmark size={11} /> Track
+                                </button>
+                                <a 
+                                  href={`https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(item.title)}&location=India`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn btn-primary btn-sm"
+                                  style={{ padding: '2px 8px', fontSize: 10.5, gap: 4, textDecoration: 'none' }}
+                                >
+                                  <ExternalLink size={11} /> Find ↗
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

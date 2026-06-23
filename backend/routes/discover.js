@@ -355,6 +355,82 @@ router.post('/role-jobs', async (req, res) => {
   }
 });
 
+// ════════════════════════════════════════════════════════════════
+// POST /api/discover/ats-audit
+// ════════════════════════════════════════════════════════════════
+router.post('/ats-audit', async (req, res) => {
+  try {
+    const { resumeText = '', skills = [] } = req.body;
+    if (!resumeText.trim() || resumeText.length < 30) {
+      return res.status(400).json({ error: 'Resume text too short or empty' });
+    }
+
+    const skillStr = Array.isArray(skills) ? skills.join(', ') : String(skills);
+    
+    const prompt = `You are a Senior Recruiter and ATS (Applicant Tracking System) Expert with years of hiring experience in the tech sector.
+Analyze this candidate's resume text and generate a comprehensive ATS Audit Report, customized suggestions, and a Suited Roles directory containing exactly 20 suited tech job titles they are qualified for based on their profile.
+
+Candidate Resume Text:
+"${resumeText.slice(0, 4500)}"
+
+Additional skills: ${skillStr}
+
+Return a single JSON object (with no markdown wrappers, no arrays outside fields):
+{
+  "atsGrade": "<A, B, C, D, or F>",
+  "atsScore": <integer 0-100>,
+  "recruiterSummary": "<3 sentences of expert feedback from a senior recruiter perspective on their strengths and gaps>",
+  "formattingAudits": [
+    {"rule":"Avoid tables & columns","status":"<Pass / Fail / Warning>","reason":"<why it passed or failed>"},
+    {"rule":"Standard section headers","status":"<Pass / Fail / Warning>","reason":"<why>"},
+    {"rule":"Font & readability consistency","status":"<Pass / Fail / Warning>","reason":"<why>"},
+    {"rule":"Contact details location","status":"<Pass / Fail / Warning>","reason":"<why>"}
+  ],
+  "keywordDensity": [
+    {"keyword":"React","present":true,"count":4},
+    {"keyword":"TypeScript","present":false,"count":0},
+    {"keyword":"Node.js","present":true,"count":2},
+    {"keyword":"Docker","present":false,"count":0}
+  ],
+  "rewrittenSummary": "<ATS-optimized 3-sentence professional summary using high-impact action verbs and metric placeholders>",
+  "rewrittenBullets": [
+    "<High-impact resume experience bullet point 1 using STAR/XYZ format (Accomplished X as measured by Y by doing Z)>",
+    "<High-impact resume experience bullet point 2 using STAR/XYZ format>",
+    "<High-impact resume experience bullet point 3 using STAR/XYZ format>",
+    "<High-impact resume experience bullet point 4 using STAR/XYZ format>"
+  ],
+  "suitedRoles": [
+    {"index":1,"title":"React Developer","fit":98,"reason":"Excellent match with your frontend state and component framework projects.","avgSalary":"6-10 LPA","demand":"Very High"},
+    {"index":2,"title":"Frontend Engineer","fit":95,"reason":"Strong JavaScript logic and responsive web interface background.","avgSalary":"5-9 LPA","demand":"Very High"},
+    {"index":3,"title":"MERN Stack Developer","fit":94,"reason":"Full-stack project experience spanning MongoDB, Express, React, and Node.js.","avgSalary":"6-9 LPA","demand":"High"},
+    {"index":4,"title":"Node.js Developer","fit":90,"reason":"Solid backend API construction and asynchronous logic understanding.","avgSalary":"5-8 LPA","demand":"High"},
+    {"index":5,"title":"JavaScript Developer","fit":90,"reason":"Deep knowledge of JavaScript ES6+, closures, and asynchronous flow control.","avgSalary":"5-8 LPA","demand":"High"},
+    {"index":6,"title":"Web Developer","fit":88,"reason":"General capability to design and implement client-side websites.","avgSalary":"4-7 LPA","demand":"Medium"},
+    {"index":7,"title":"Associate Software Engineer","fit":85,"reason":"Foundational computer science concepts and coding ability for entry roles.","avgSalary":"6-10 LPA","demand":"High"},
+    {"index":8,"title":"Junior Backend Developer","fit":82,"reason":"Familiarity with server architectures, routing, and databases.","avgSalary":"4-7 LPA","demand":"Medium"},
+    {"index":9,"title":"UI Developer","fit":80,"reason":"Expertise in CSS, flexbox, grid, and converting designs to pixel-perfect layouts.","avgSalary":"4-6 LPA","demand":"Medium"},
+    {"index":10,"title":"Full Stack Developer","fit":80,"reason":"Versatile experience on both client-side interfaces and database models.","avgSalary":"5-8 LPA","demand":"High"},
+    {"index":11,"title":"Software Developer","fit":78,"reason":"Ability to write modular code, resolve bugs, and build features.","avgSalary":"5-9 LPA","demand":"High"},
+    {"index":12,"title":"Data Analyst","fit":75,"reason":"Capability to handle structured database queries (SQL/MongoDB) and clean JSON data.","avgSalary":"4-7 LPA","demand":"Medium"},
+    {"index":13,"title":"QA Automation Engineer","fit":72,"reason":"Logical mindset suitable for writing test scripts and verifying interface inputs.","avgSalary":"4-8 LPA","demand":"Medium"},
+    {"index":14,"title":"Technical Support Engineer","fit":70,"reason":"Deep technical knowledge to diagnose user issues, review logs, and fix bugs.","avgSalary":"3-6 LPA","demand":"Medium"},
+    {"index":15,"title":"DevOps Junior Associate","fit":68,"reason":"Foundational skills in hosting backend routes and configuring CORS or proxy headers.","avgSalary":"5-8 LPA","demand":"Medium"},
+    {"index":16,"title":"Product Analyst","fit":65,"reason":"Strong combination of coding understanding and product features analysis.","avgSalary":"4-8 LPA","demand":"Medium"},
+    {"index":17,"title":"Mobile Web Developer","fit":62,"reason":"Designing responsive viewports for mobile browsers using flexbox media queries.","avgSalary":"4-7 LPA","demand":"Medium"},
+    {"index":18,"title":"Solutions Engineer","fit":60,"reason":"Helping customize and integrate APIs, webhooks, and database configurations.","avgSalary":"5-9 LPA","demand":"Medium"},
+    {"index":19,"title":"API Developer","fit":60,"reason":"Designing structured RESTful APIs, routing parameters, and error handlers.","avgSalary":"5-8 LPA","demand":"High"},
+    {"index":20,"title":"Technical Writer","fit":60,"reason":"Strong documentation capacity and clear layout formatting capability.","avgSalary":"3-6 LPA","demand":"Medium"}
+  ]
+}`;
+
+    const result = await generate({ prompt, jsonMode: true });
+    res.json(result);
+  } catch (err) {
+    console.error('[/ats-audit] ERROR:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
 
 // ════════════════════════════════════════════════════════════════

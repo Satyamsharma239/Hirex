@@ -130,6 +130,59 @@ function getFallbackMock(promptText) {
     return match ? match[1].trim() : 'Satyam Sharma';
   })();
 
+  // 0. Senior Recruiter & ATS Expert Audit
+  if (p.includes('ats-audit') || p.includes('ats audit') || p.includes('atsgrade') || p.includes('suitedroles')) {
+    return {
+      "atsGrade": "B",
+      "atsScore": 81,
+      "recruiterSummary": "The candidate displays high practical proficiency in building full-stack web architectures, particularly with React and Node.js. The main gaps are missing type-safety (TypeScript) and backend scaling (Docker). The layout is mostly parsable but bullet points could be rewritten to better emphasize business value using metrics.",
+      "formattingAudits": [
+        {"rule":"Avoid tables & columns","status":"Warning","reason":"Detected multi-column text containers. Single column layouts are safer for legacy parsing engines."},
+        {"rule":"Standard section headers","status":"Pass","reason":"Using standard headers like 'Education' and 'Skills'."},
+        {"rule":"Font & readability consistency","status":"Pass","reason":"Uniform layout styles with standard sans-serif font."},
+        {"rule":"Contact details location","status":"Pass","reason":"Contact info placed correctly in body text, not nested in headers/footers."}
+      ],
+      "keywordDensity": [
+        {"keyword":"React","present":true,"count":5},
+        {"keyword":"Node.js","present":true,"count":3},
+        {"keyword":"MongoDB","present":true,"count":2},
+        {"keyword":"Express","present":true,"count":2},
+        {"keyword":"TypeScript","present":false,"count":0},
+        {"keyword":"Docker","present":false,"count":0},
+        {"keyword":"AWS","present":false,"count":0}
+      ],
+      "rewrittenSummary": "Impact-driven Software Developer with extensive experience designing and launching MERN stack web applications. Proven capacity to optimize frontend component re-renders and construct RESTful server microservices. Passionate about solving backend scalability challenges and writing clean, maintainable systems.",
+      "rewrittenBullets": [
+        "Architected and deployed responsive MERN stack web applications using React hooks and Node.js REST routes, driving customer engagement.",
+        "Optimized client-side bundle performance by 25% through lazy-loading components and caching expensive calculation results.",
+        "Engineered secure MongoDB Atlas database schemas with optimized indexing, reducing average query response latency by 35%.",
+        "Constructed Node.js event-loop friendly background tasks that automated user email communications, boosting throughput by 40%."
+      ],
+      "suitedRoles": [
+        {"index":1,"title":"React Developer","fit":98,"reason":"Excellent match with your frontend state and component framework projects.","avgSalary":"6-10 LPA","demand":"Very High"},
+        {"index":2,"title":"Frontend Engineer","fit":95,"reason":"Strong JavaScript logic and responsive web interface background.","avgSalary":"5-9 LPA","demand":"Very High"},
+        {"index":3,"title":"MERN Stack Developer","fit":94,"reason":"Full-stack project experience spanning MongoDB, Express, React, and Node.js.","avgSalary":"6-9 LPA","demand":"High"},
+        {"index":4,"title":"Node.js Developer","fit":90,"reason":"Solid backend API construction and asynchronous logic understanding.","avgSalary":"5-8 LPA","demand":"High"},
+        {"index":5,"title":"JavaScript Developer","fit":90,"reason":"Deep knowledge of JavaScript ES6+, closures, and asynchronous flow control.","avgSalary":"5-8 LPA","demand":"High"},
+        {"index":6,"title":"Web Developer","fit":88,"reason":"General capability to design and implement client-side websites.","avgSalary":"4-7 LPA","demand":"Medium"},
+        {"index":7,"title":"Associate Software Engineer","fit":85,"reason":"Foundational computer science concepts and coding ability for entry roles.","avgSalary":"6-10 LPA","demand":"High"},
+        {"index":8,"title":"Junior Backend Developer","fit":82,"reason":"Familiarity with server architectures, routing, and databases.","avgSalary":"4-7 LPA","demand":"Medium"},
+        {"index":9,"title":"UI Developer","fit":80,"reason":"Expertise in CSS, flexbox, grid, and converting designs to pixel-perfect layouts.","avgSalary":"4-6 LPA","demand":"Medium"},
+        {"index":10,"title":"Full Stack Developer","fit":80,"reason":"Versatile experience on both client-side interfaces and database models.","avgSalary":"5-8 LPA","demand":"High"},
+        {"index":11,"title":"Software Developer","fit":78,"reason":"Ability to write modular code, resolve bugs, and build features.","avgSalary":"5-9 LPA","demand":"High"},
+        {"index":12,"title":"Data Analyst","fit":75,"reason":"Capability to handle structured database queries (SQL/MongoDB) and clean JSON data.","avgSalary":"4-7 LPA","demand":"Medium"},
+        {"index":13,"title":"QA Automation Engineer","fit":72,"reason":"Logical mindset suitable for writing test scripts and verifying interface inputs.","avgSalary":"4-8 LPA","demand":"Medium"},
+        {"index":14,"title":"Technical Support Engineer","fit":70,"reason":"Deep technical knowledge to diagnose user issues, review logs, and fix bugs.","avgSalary":"3-6 LPA","demand":"Medium"},
+        {"index":15,"title":"DevOps Junior Associate","fit":68,"reason":"Foundational skills in hosting backend routes and configuring CORS or proxy headers.","avgSalary":"5-8 LPA","demand":"Medium"},
+        {"index":16,"title":"Product Analyst","fit":65,"reason":"Strong combination of coding understanding and product features analysis.","avgSalary":"4-8 LPA","demand":"Medium"},
+        {"index":17,"title":"Mobile Web Developer","fit":62,"reason":"Designing responsive viewports for mobile browsers using flexbox media queries.","avgSalary":"4-7 LPA","demand":"Medium"},
+        {"index":18,"title":"Solutions Engineer","fit":60,"reason":"Helping customize and integrate APIs, webhooks, and database configurations.","avgSalary":"5-9 LPA","demand":"Medium"},
+        {"index":19,"title":"API Developer","fit":60,"reason":"Designing structured RESTful APIs, routing parameters, and error handlers.","avgSalary":"5-8 LPA","demand":"High"},
+        {"index":20,"title":"Technical Writer","fit":60,"reason":"Strong documentation capacity and clear layout formatting capability.","avgSalary":"3-6 LPA","demand":"Medium"}
+      ]
+    };
+  }
+
   // 1. Outreach Email
   if (p.includes('outreach-email') || p.includes('outreach email') || p.includes('outreach_email')) {
     return {

@@ -36,8 +36,8 @@ export default function InterviewPrep({ resumeData, prefillData, onClearPrefill 
 
   const handleQuickStart = (job) => {
     setCompany(job.company);
-    setRole(job.title);
-    setJobDescription(job.description || '');
+    setRole(job.role);
+    setJobDescription(job.jobDescription || '');
   };
 
   const handleStartSim = (e) => {
@@ -152,7 +152,7 @@ export default function InterviewPrep({ resumeData, prefillData, onClearPrefill 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {activeJobs.map(job => (
                   <button 
-                    key={job.id} 
+                    key={job._id} 
                     onClick={() => handleQuickStart(job)}
                     className="card-static hover-card" 
                     style={{ 
@@ -162,7 +162,7 @@ export default function InterviewPrep({ resumeData, prefillData, onClearPrefill 
                     }}
                   >
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-1)' }}>{job.title}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-1)' }}>{job.role}</div>
                       <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{job.company}</div>
                     </div>
                     <ChevronRight size={13} color="var(--text-3)" />

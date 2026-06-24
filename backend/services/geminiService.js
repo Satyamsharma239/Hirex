@@ -36,11 +36,17 @@ async function generate(options = {}) {
     retries = 3
   } = options;
 
-  const apiKey = getApiKey();
-  const genAI = new GoogleGenerativeAI(apiKey);
-  
-  // Build the complete prompt text
   const fullPrompt = prompt || (systemPrompt ? `${systemPrompt}\n\n${userPrompt}` : userPrompt);
+
+  let apiKey;
+  try {
+    apiKey = getApiKey();
+  } catch (err) {
+    console.warn(`⚠️ [Gemini API Key missing or invalid]: ${err.message}. Activating local dynamic AI mock fallback.`);
+    return getFallbackMock(fullPrompt);
+  }
+  
+  const genAI = new GoogleGenerativeAI(apiKey);
 
   const config = {
     temperature,

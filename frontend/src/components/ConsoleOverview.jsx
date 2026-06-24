@@ -33,7 +33,7 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
   const targetRole = resumeData?.targetRole || 'Software Developer';
   const atsScore = auditData?.atsScore || 95;
   const atsGrade = auditData?.atsGrade || 'A';
-  const skillsCount = dnaData?.skills?.length || 5;
+  const skillsCount = dnaData?.topSkills?.length || dnaData?.skills?.length || 5;
 
   return (
     <div style={{ padding: '24px 28px', color: 'var(--text-1)' }}>

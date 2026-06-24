@@ -108,7 +108,7 @@ Return JSON:
 // ════════════════════════════════════════════════════════════════
 router.post('/interview-sim', async (req, res) => {
   try {
-    const { company, role, userAnswer = '', questionIndex = 0, jobDescription = '' } = req.body;
+    const { company, role, userAnswer = '', questionIndex = 0, jobDescription = '', question = '' } = req.body;
     if (!company || !role) return res.status(400).json({ error: 'company and role required' });
 
     if (!userAnswer) {
@@ -138,9 +138,8 @@ Return JSON matching this structure EXACTLY:
       return res.json(await generate({ prompt, temperature: 0.85 }));
     }
 
-    // Score an answer
     const prompt = `You are a senior interviewer at "${company}" evaluating a candidate for "${role}".
-Question ${questionIndex}: "${userAnswer.slice(0, 50)}..."
+Question: "${question || `Question ${questionIndex}`}"
 Candidate's answer: "${userAnswer.slice(0, 800)}"
 
 Score this answer and return JSON:

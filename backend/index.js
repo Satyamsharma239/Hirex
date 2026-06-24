@@ -56,9 +56,62 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// ─── MongoDB ─────────────────────────────────────────────────────────────────
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ MongoDB Connected!'))
+  .then(async () => {
+    console.log('✅ MongoDB Connected!');
+    try {
+      const Job = require('./models/job');
+      const count = await Job.countDocuments();
+      if (count === 0) {
+        console.log('🌱 Seeding mock jobs...');
+        await Job.create([
+          {
+            company: "Google",
+            role: "Senior UX Designer",
+            status: "Interview",
+            location: "Mountain View, CA",
+            salary: "15 - 25 LPA",
+            appliedDate: "2023-10-12",
+            jobDescription: "Lead UX designs for Google Search and Workspace applications.",
+            notes: "Next: Panel Interview (25 Oct)"
+          },
+          {
+            company: "Airbnb",
+            role: "Product Manager",
+            status: "Applied",
+            location: "San Francisco, CA",
+            salary: "18 - 28 LPA",
+            appliedDate: "2023-10-18",
+            jobDescription: "Manage guest checkout and booking platform experience.",
+            notes: "Next: Initial Screen (28 Oct)"
+          },
+          {
+            company: "Stripe",
+            role: "Lead Developer",
+            status: "Offered",
+            location: "Remote / India",
+            salary: "25 - 35 LPA",
+            appliedDate: "2023-10-01",
+            jobDescription: "Design scalable API endpoints and billing workflows.",
+            notes: "Next: Feedback (Due 26 Oct)"
+          },
+          {
+            company: "Spotify",
+            role: "Data Scientist",
+            status: "Applied",
+            location: "New York, NY",
+            salary: "12 - 20 LPA",
+            appliedDate: "2023-10-20",
+            jobDescription: "Analyze music streaming metrics and recommendation algorithms.",
+            notes: ""
+          }
+        ]);
+        console.log('✅ Seeding complete!');
+      }
+    } catch (seedErr) {
+      console.warn('⚠️ Seeding failed:', seedErr.message);
+    }
+  })
   .catch((err) => console.log('❌ MongoDB Error:', err.message));
 
 // ─── Routes ──────────────────────────────────────────────────────────────────

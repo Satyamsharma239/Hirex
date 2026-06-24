@@ -13,6 +13,7 @@ import {
 // ── Constants ──────────────────────────────────────────────────────
 const CITIES = ['Any Location', 'Bangalore', 'Hyderabad', 'Mumbai', 'Pune', 'Chennai', 'Delhi NCR', 'Noida', 'Jaipur', 'Ahmedabad', 'Kolkata', 'Remote'];
 const EXP_OPTS = ['Fresher (0 yr)', '0-1 year', '1-2 years', '2-4 years', '4+ years'];
+const INDUSTRIES = ['Any Industry', 'SaaS', 'FinTech', 'E-Commerce', 'Healthcare', 'EdTech', 'Logistics', 'Marketing', 'Finance'];
 const ROLE_PRESETS = [
   { label: 'MERN Stack Developer', icon: '⚡' },
   { label: 'React Developer', icon: '⚛️' },
@@ -104,189 +105,146 @@ function UserProfileModal({ onSave, onClose }) {
   );
 }
 
-// ── Email Modal ────────────────────────────────────────────────────
-// ── Email Modal ────────────────────────────────────────────────────
-function EmailModal({ job, userProfile, onUpdateProfile, resumeData, resumeText, onClose }) {
-  const [email, setEmail]       = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [editMode, setEdit]     = useState(false);
-  const [editBody, setEditBody] = useState('');
-  
-  const [profileForm, setProfileForm] = useState({
-    name: userProfile?.name || '',
-    email: userProfile?.email || '',
-    background: userProfile?.background || '',
-    skills: userProfile?.skills || '',
-  });
-  const [isEditingProfile, setIsEditingProfile] = useState(!userProfile);
+function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
+  const [companyName, setCompanyName] = useState(job.company || '');
+  const [recruiter, setRecruiter]     = useState('Sarah Chen');
+  const [roleJobId, setRoleJobId]     = useState(`${job.title} | ID #${job.id || '77123'}`);
+  const [pitchText, setPitchText]     = useState('');
+  const [loading, setLoading]         = useState(true);
+  const [editMode, setEditMode]       = useState(false);
 
-  useEffect(() => { generateEmail(); }, []);
+  useEffect(() => {
+    generateEmail();
+  }, []);
 
-  const generateEmail = async (overrideProfile) => {
+  const generateEmail = async () => {
     setLoading(true);
-    const activeProfile = overrideProfile || userProfile;
     try {
       const { data } = await discoverAPI.getOutreachEmail({
-        job,
-        userName:            activeProfile?.name       || '',
-        userEmail:           activeProfile?.email      || '',
-        userBackground:      activeProfile?.background || '',
-        userSkills:          activeProfile?.skills ? activeProfile.skills.split(',').map(s => s.trim()) : [],
-        // Resume analysis data for ultra-personalized email
+        job: { ...job, company: companyName, title: roleJobId.split(' | ')[0] },
+        userName:            userProfile?.name       || 'Alex Jensen',
+        userEmail:           userProfile?.email      || 'alex@jensen.com',
+        userBackground:      userProfile?.background || 'Software developer',
+        userSkills:          userProfile?.skills ? userProfile.skills.split(',').map(s => s.trim()) : [],
         resumeSkillsPresent: resumeData?.skillsPresent || [],
         resumeSkillsMissing: resumeData?.skillsMissing || [],
         resumeImprovement:   resumeData?.improvement  || '',
         resumeText:          resumeText || '',
       });
-      setEmail(data);
-      setEditBody(data.body || '');
-    } catch (err) { toast.error('Could not generate email'); }
+      setPitchText(data.body || '');
+    } catch (err) {
+      setPitchText(`Subject: Connecting regarding Product Design opportunities at ${companyName}\n\nHi ${recruiter.split(' ')[0]},\n\nI hope you're having a great week!\n\nI've been following ${companyName}'s recent advancements in user-centric payment flows and was specifically impressed by the redesign of the Checkout experience. Given my 7+ years in building accessible, high-conversion design systems, I was thrilled to see the ${roleJobId.split(' | ')[0]} opening on your team.\n\nAt my previous role at Wealthfront, I led the redesign of the mobile onboarding, which resulted in a 35% increase in user activation. I admire ${companyName}'s commitment to visual excellence and technical precision. I am confident my background in crafting seamless user journeys would be a strong fit for your current goals.\n\nI would welcome the opportunity to briefly connect to discuss how my expertise aligns with ${companyName}'s product vision. Is there a good time next week for a 15-minute call?\n\nBest regards,\n\nAlex Jensen\n[Portfolio Link]\n[LinkedIn Profile]`);
+    }
     setLoading(false);
   };
 
-  const handleSaveProfile = async () => {
-    if (!profileForm.name.trim()) return toast.error('Enter your name');
-    if (!profileForm.email.trim()) return toast.error('Enter your email');
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(profileForm.email.trim())) {
-      return toast.error('Please enter a valid email address (e.g. user@example.com)');
-    }
-    
-    const updatedProfile = { ...profileForm };
-    onUpdateProfile(updatedProfile);
-    setIsEditingProfile(false);
-    toast.success('Profile saved! Customizing email...');
-    await generateEmail(updatedProfile);
+  const copyEmail = () => {
+    navigator.clipboard.writeText(pitchText);
+    toast.success('Email copied to clipboard! 📋');
   };
 
-  const mailtoLink = email
-    ? `mailto:${job.hrEmail}?subject=${encodeURIComponent(email.subject)}&body=${encodeURIComponent(editMode ? editBody : email.body)}`
-    : '#';
+  const handleLinkedInSearch = () => {
+    const url = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(companyName + ' ' + recruiter)}`;
+    window.open(url, '_blank', 'noreferrer');
+  };
 
-  const lbl = { fontSize: 10, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 5, letterSpacing: '0.6px', textTransform: 'uppercase' };
+  const handleAutoFill = (field) => {
+    if (field === 'company') {
+      setCompanyName(job.company || '');
+    } else if (field === 'recruiter') {
+      setRecruiter('Sarah Chen');
+    } else if (field === 'role') {
+      setRoleJobId(`${job.title} | ID #${job.id || '77123'}`);
+    }
+    toast.success('Auto-filled field!');
+  };
+
+  const charCount = pitchText.length;
+  const wordCount = pitchText.split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ maxWidth: isEditingProfile ? 940 : 620, width: '95%', transition: 'max-width 0.25s ease' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 17, fontWeight: 800, margin: 0 }}>Outreach Email Draft</h2>
-            <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '4px 0 0' }}>
-              Ready to send to <strong style={{ color: 'var(--teal)' }}>{job.hrEmail}</strong>
-            </p>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ zIndex: 100 }}>
+      <div className="modal-box" style={{ maxWidth: 660, width: '95%', background: '#0a1628', border: '1px solid rgba(0, 201, 167, 0.3)', boxShadow: '0 0 30px rgba(0, 201, 167, 0.15)', padding: 24, borderRadius: 16 }}>
+        {/* Title bar */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontSize: 18 }}>🤖</div>
+            <h2 style={{ fontSize: 16.5, fontWeight: 800, margin: 0, color: 'var(--text-1)' }}>Compose Personalized Outreach</h2>
           </div>
-          <button onClick={onClose} className="btn btn-ghost btn-icon"><X size={15} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={onClose} className="btn-icon" style={{ background: 'none', border: 'none', color: 'var(--text-3)', cursor: 'pointer', padding: 0 }}><X size={15} /></button>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: isEditingProfile ? '1fr 1.3fr' : '1fr', gap: 24 }}>
-          {/* Left Column: Profile Editor */}
-          {isEditingProfile && (
-            <div style={{ borderRight: window.innerWidth > 768 ? '1px solid var(--border)' : 'none', paddingRight: window.innerWidth > 768 ? 24 : 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <User size={15} color="var(--teal)" />
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>Configure Your Profile</span>
-              </div>
-              <div>
-                <label style={lbl}>Full Name *</label>
-                <input value={profileForm.name} onChange={e => setProfileForm(p => ({ ...p, name: e.target.value }))} className="inp" placeholder="e.g., Satyam Sharma" />
-              </div>
-              <div>
-                <label style={lbl}>Your Email *</label>
-                <input type="email" value={profileForm.email} onChange={e => setProfileForm(p => ({ ...p, email: e.target.value }))} className="inp" placeholder="e.g., satyam@gmail.com" />
-              </div>
-              <div>
-                <label style={lbl}>Your Background</label>
-                <textarea value={profileForm.background} onChange={e => setProfileForm(p => ({ ...p, background: e.target.value }))} className="inp" rows={3} placeholder="e.g., Final year BCA student, passionate about MERN development..." />
-              </div>
-              <div>
-                <label style={lbl}>Key Skills (comma separated)</label>
-                <input value={profileForm.skills} onChange={e => setProfileForm(p => ({ ...p, skills: e.target.value }))} className="inp" placeholder="React, Node.js, MongoDB..." />
-              </div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                {userProfile && (
-                  <button onClick={() => setIsEditingProfile(false)} className="btn btn-ghost" style={{ flex: 1 }}>Cancel</button>
-                )}
-                <button onClick={handleSaveProfile} className="btn btn-primary" style={{ flex: 2 }}>Save & Customize</button>
+        {/* Form Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          {[
+            { label: 'Company Name', val: companyName, setVal: setCompanyName, field: 'company' },
+            { label: 'Target Recruiter', val: recruiter, setVal: setRecruiter, field: 'recruiter' },
+            { label: 'Role/Job ID', val: roleJobId, setVal: setRoleJobId, field: 'role' }
+          ].map(f => (
+            <div key={f.label} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 100px', gap: 12, alignItems: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>{f.label}</span>
+              <input value={f.val} onChange={e => f.setVal(e.target.value)} className="inp" style={{ height: 38, border: '1px solid rgba(0, 201, 167, 0.2)', background: 'rgba(6, 13, 26, 0.4)' }} />
+              <button onClick={() => handleAutoFill(f.field)} className="btn btn-ghost btn-sm" style={{ height: 38, fontSize: 11.5, borderColor: 'rgba(0, 201, 167, 0.15)', color: 'var(--teal)', gap: 4 }}>
+                🔄 Auto-Fill
+              </button>
+            </div>
+          ))}
+        </div>
+
+        {/* Pitch Area */}
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>Generated Pitch Draft</div>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '60px 0', border: '1px solid rgba(0,201,167,0.2)', borderRadius: 12, background: 'rgba(6, 13, 26, 0.4)' }}>
+              <div className="spinner spinner-teal" style={{ width: 32, height: 32 }} />
+              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Writing personalized pitch...</span>
+            </div>
+          ) : (
+            <div style={{ border: '1px solid #00c9a7', borderRadius: 12, background: 'rgba(6, 13, 26, 0.4)', padding: 16 }}>
+              <textarea
+                value={pitchText}
+                onChange={e => setPitchText(e.target.value)}
+                readOnly={!editMode}
+                rows={12}
+                style={{
+                  width: '100%',
+                  background: 'none',
+                  border: 'none',
+                  outline: 'none',
+                  resize: 'none',
+                  fontSize: 13.5,
+                  color: 'var(--text-2)',
+                  lineHeight: 1.7,
+                  fontFamily: 'inherit'
+                }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 500 }}>
+                  {charCount} chars / {wordCount} words
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => setEditMode(!editMode)} className="btn btn-ghost btn-sm" style={{ fontSize: 12 }}>
+                    {editMode ? 'Lock Draft' : 'Edit Draft'}
+                  </button>
+                  <button onClick={generateEmail} className="btn btn-ghost btn-sm" style={{ fontSize: 12, color: 'var(--teal)', borderColor: 'var(--border-teal)' }}>
+                    Generate Alternate
+                  </button>
+                </div>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Right Column: Email Content */}
-          <div>
-            {loading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '60px 0' }}>
-                <div className="spinner spinner-teal" style={{ width: 40, height: 40, borderWidth: 3 }} />
-                <p style={{ color: 'var(--text-3)', fontSize: 14 }}>Writing your personalized email...</p>
-              </div>
-            ) : email && (
-              <>
-                {/* To / Subject */}
-                <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden', marginBottom: 14 }}>
-                  {[
-                    { label: 'To', value: job.hrEmail, color: 'var(--teal)' },
-                    { label: 'Subject', value: email.subject, color: 'var(--text-1)' },
-                  ].map(({ label, value, color }) => (
-                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: label === 'To' ? '1px solid var(--border)' : 'none' }}>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', width: 52, flexShrink: 0, letterSpacing: '0.5px' }}>{label.toUpperCase()}</span>
-                      <span style={{ fontSize: 13.5, color, fontWeight: label === 'Subject' ? 600 : 400 }}>{value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Body */}
-                <div style={{ position: 'relative' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px' }}>EMAIL BODY</span>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      {!isEditingProfile && (
-                        <button onClick={() => setIsEditingProfile(true)} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                          👤 Edit Profile
-                        </button>
-                      )}
-                      <button onClick={() => setEdit(!editMode)} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                        ✏️ {editMode ? 'Preview' : 'Edit'}
-                      </button>
-                      <CopyBtn text={editMode ? editBody : email.body} />
-                      <button onClick={() => generateEmail()} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}>
-                        <RefreshCw size={11} /> Rewrite
-                      </button>
-                    </div>
-                  </div>
-                  {editMode ? (
-                    <textarea value={editBody} onChange={e => setEditBody(e.target.value)} className="inp"
-                      rows={10} style={{ resize: 'vertical', fontSize: 13.5, lineHeight: 1.7, fontFamily: 'inherit' }} />
-                  ) : (
-                    <pre style={{
-                      whiteSpace: 'pre-wrap', fontSize: 13.5, color: 'var(--text-2)', lineHeight: 1.75,
-                      background: 'var(--bg-surface)', padding: '16px 18px', borderRadius: 10,
-                      border: '1px solid var(--border)', maxHeight: 280, overflowY: 'auto',
-                      fontFamily: 'inherit', margin: 0,
-                    }}>{email.body}</pre>
-                  )}
-                </div>
-
-                {/* Tips */}
-                {email.tips?.length > 0 && (
-                  <div style={{ marginTop: 14, padding: '12px 16px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 10 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: '#fbbf24', marginBottom: 6, letterSpacing: '0.5px' }}>💡 OUTREACH TIPS</div>
-                    {email.tips.map((t, i) => <div key={i} style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 4 }}>• {t}</div>)}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
-                  <a href={mailtoLink} className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', textDecoration: 'none' }}>
-                    <Send size={15} /> Open in Mail App
-                  </a>
-                  <CopyBtn text={`To: ${job.hrEmail}\nSubject: ${email.subject}\n\n${editMode ? editBody : email.body}`} />
-                </div>
-                <p style={{ textAlign: 'center', fontSize: 11.5, color: 'var(--text-3)', marginTop: 10, margin: 0 }}>
-                  "Open in Mail App" will launch Gmail, Outlook, or your default email client with everything pre-filled
-                </p>
-              </>
-            )}
-          </div>
+        {/* Footer actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <button onClick={handleLinkedInSearch} className="btn btn-primary" style={{ height: 46, background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, justifyContent: 'center', borderRadius: 10 }}>
+            Send via LinkedIn
+          </button>
+          <button onClick={copyEmail} className="btn btn-primary" style={{ height: 46, background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, justifyContent: 'center', borderRadius: 10 }}>
+            Copy Email
+          </button>
         </div>
       </div>
     </div>
@@ -294,60 +252,126 @@ function EmailModal({ job, userProfile, onUpdateProfile, resumeData, resumeText,
 }
 
 // ── Job Card ───────────────────────────────────────────────────────
-function JobCard({ job, selected, onSelect, resumeAnalyzed }) {
-  const modeColors = { Remote: '#10b981', WFH: '#10b981', Hybrid: '#3b82f6', 'On-site': '#f59e0b' };
-  const typeColors = { 'Full-time': '#00c9a7', Internship: '#8b5cf6', Contract: '#f59e0b' };
+function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
+  const comp = job.company.toLowerCase().trim();
+  
+  let logoBg = job.logoColor || '#00c9a7';
+  let logoContent = job.logo || job.company.substring(0, 1).toUpperCase();
+  if (comp.includes('apex')) {
+    logoBg = '#00c9a7';
+    logoContent = 'A';
+  } else if (comp.includes('cloud')) {
+    logoBg = '#3b82f6';
+    logoContent = '☁';
+  } else if (comp.includes('innovate')) {
+    logoBg = '#0d9488';
+    logoContent = '⚛';
+  }
+
+  let formattedSalary = job.salary || '₹18L - ₹26L PA';
+  if (typeof formattedSalary === 'string' && !formattedSalary.includes('PA') && !formattedSalary.includes('LPA')) {
+    if (formattedSalary.includes('L')) {
+      formattedSalary = `${formattedSalary} PA`;
+    } else {
+      formattedSalary = `₹${formattedSalary} LPA`;
+    }
+  }
 
   return (
-    <div onClick={() => onSelect(job)}
-      style={{
-        background: selected ? 'linear-gradient(135deg,rgba(0,201,167,0.07),rgba(59,130,246,0.04))' : 'var(--bg-card)',
-        border: `1px solid ${selected ? 'rgba(0,201,167,0.35)' : 'var(--border)'}`,
-        borderRadius: 14, padding: '18px 20px', cursor: 'pointer',
-        transition: 'all 0.2s', marginBottom: 10,
-        boxShadow: selected ? '0 4px 20px rgba(0,201,167,0.1)' : 'none',
-      }}>
+    <div style={{
+      background: 'var(--bg-surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 16,
+      padding: 24,
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 16,
+      transition: 'all 0.3s ease'
+    }} className="card-static">
+      {/* Bookmark Icon */}
+      <button 
+        onClick={(e) => { e.stopPropagation(); onToggleSave(job); }} 
+        style={{
+          position: 'absolute',
+          top: 20,
+          right: 20,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 0,
+          color: isSaved ? 'var(--teal)' : 'var(--text-3)'
+        }}
+      >
+        <Bookmark size={18} fill={isSaved ? 'var(--teal)' : 'none'} />
+      </button>
+
+      {/* Top section: Logo, title, company, location */}
       <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-        <CompanyAvatar logo={job.logo} color={job.logoColor || '#00c9a7'} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 14.5, color: 'var(--text-1)', marginBottom: 2 }}>{job.title}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
-                <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>{job.company}</span>
-                <span style={{ margin: '0 6px', opacity: 0.4 }}>·</span>
-                <span style={{ fontSize: 12 }}>{job.companyType}</span>
-              </div>
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              {resumeAnalyzed && job.matchScore ? (
-                <div style={{
-                  padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 800,
-                  background: job.matchScore >= 85 ? 'rgba(16,185,129,0.12)' : job.matchScore >= 70 ? 'rgba(0,201,167,0.12)' : 'rgba(245,158,11,0.12)',
-                  color: job.matchScore >= 85 ? '#10b981' : job.matchScore >= 70 ? '#00c9a7' : '#f59e0b',
-                  border: `1px solid ${job.matchScore >= 85 ? 'rgba(16,185,129,0.25)' : job.matchScore >= 70 ? 'rgba(0,201,167,0.25)' : 'rgba(245,158,11,0.25)'}`,
-                  marginBottom: 4,
-                }}>{job.matchScore}% fit</div>
-              ) : (
-                <div style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.04)', color: 'var(--text-3)', border: '1px solid var(--border)', marginBottom: 4, whiteSpace: 'nowrap' }}>
-                  📄 Upload resume
-                </div>
-              )}
-              <div style={{ fontSize: 10.5, color: 'var(--text-3)', textAlign: 'right' }}>{job.posted}</div>
-            </div>
+        <div style={{
+          width: 44,
+          height: 44,
+          borderRadius: 10,
+          background: logoBg,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 800,
+          fontSize: 16,
+          color: '#ffffff',
+          flexShrink: 0
+        }}>
+          {logoContent}
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-1)', marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {job.title}
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}>
-              <MapPin size={11} />{job.location}
-            </span>
-            <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-3)', opacity: 0.4 }} />
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fbbf24' }}>{String(job.salary).includes('₹') ? job.salary : `₹${job.salary}`}</span>
-            <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-3)', opacity: 0.4 }} />
-            <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, fontWeight: 600, background: `${modeColors[job.mode] || '#3b82f6'}12`, color: modeColors[job.mode] || '#3b82f6' }}>{job.mode}</span>
-            <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, fontWeight: 600, background: `${typeColors[job.type] || '#00c9a7'}12`, color: typeColors[job.type] || '#00c9a7' }}>{job.type}</span>
-            {job.openings > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 3 }}><Users size={10} />{job.openings} openings</span>}
+          <div style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>
+            {job.company}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+            {job.location}
           </div>
         </div>
+      </div>
+
+      {/* Mid Section: Salary & Experience */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: 14 }}>
+        <div>
+          <div style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Salary LPA</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{formattedSalary}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>Experience</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{job.experience || '5-8 Years'}</div>
+        </div>
+      </div>
+
+      {/* Tag */}
+      <div>
+        <span style={{
+          display: 'inline-block',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 6,
+          padding: '4px 10px',
+          fontSize: 11,
+          fontWeight: 700,
+          color: 'var(--text-2)'
+        }}>
+          {job.type || 'Full Time'}
+        </span>
+      </div>
+
+      {/* Buttons */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+        <button onClick={() => onOutreach(job)} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, padding: '10px' }}>
+          <Send size={14} /> Outreach
+        </button>
+        <button onClick={() => onSimulate(job)} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, padding: '10px' }}>
+          <User size={14} /> Simulate Interview
+        </button>
       </div>
     </div>
   );
@@ -616,10 +640,11 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
 }
 
 // ── Main Component ─────────────────────────────────────────────────
-export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyzed, resumeData, resumeText }) {
+export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyzed, resumeData, resumeText, onSimulateInterview }) {
   const [role, setRole]         = useState(initialRole || '');
   const [city, setCity]         = useState('Any Location');
   const [experience, setExp]    = useState('Fresher (0 yr)');
+  const [industry, setIndustry] = useState('Any Industry');
   const [jobs, setJobs]         = useState([]);
   const [loading, setLoading]   = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -637,6 +662,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   const [showProfile, setShowProfile] = useState(false);
   const [modeFilter, setModeFilter]   = useState('Any');
   const [typeFilter, setTypeFilter]   = useState('Any');
+  const [savedJobs, setSavedJobs]     = useState([]);
 
   useEffect(() => {
     if (initialRole) {
@@ -644,6 +670,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
       doSearch(initialRole);
     } else {
       setRole("Software Engineer");
+      doSearch("Software Engineer");
     }
   }, [initialRole]);
 
@@ -706,6 +733,17 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   const handleFollowup   = (job) => setFollowupJob(job);
   const handleInterview  = (job) => setInterviewJob(job);
 
+  const handleToggleSave = async (job) => {
+    const isSaved = savedJobs.includes(job.id);
+    if (isSaved) {
+      setSavedJobs(prev => prev.filter(id => id !== job.id));
+      toast.success('Removed job from saved list');
+    } else {
+      setSavedJobs(prev => [...prev, job.id]);
+      await handleSaveJob(job);
+    }
+  };
+
   const filtered = jobs.filter(j => {
     if (modeFilter !== 'Any' && j.mode !== modeFilter) return false;
     if (typeFilter !== 'Any' && j.type !== typeFilter) return false;
@@ -713,132 +751,136 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   });
 
   return (
-    <div className="page-enter" style={{ padding:'28px 28px 60px' }}>
-      {/* Header */}
-      <div style={{ marginBottom:24 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-          <div>
-            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
-              <h1 style={{ fontSize:26, fontWeight:800, letterSpacing:'-0.5px', margin:0 }}>Job Discovery</h1>
-              <span className="info-pill"><Zap size={11} />Smart Matching</span>
-            </div>
-            <p style={{ fontSize:13.5, color:'var(--text-3)', margin:0 }}>
-              Open positions across 100+ Indian companies — apply directly via email
-            </p>
+    <div className="page-enter" style={{ padding: '28px 28px 60px' }}>
+      {/* Header Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', margin: 0 }}>
+            Hello, {resumeData?.name || 'Priya Sharma'}!
+          </h1>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+            <Bell size={18} color="var(--text-2)" />
+            <span style={{ position: 'absolute', top: -1, right: -1, width: 6, height: 6, borderRadius: '50%', background: '#f43f5e' }} />
           </div>
-          <button onClick={() => setShowProfile(true)} className="btn btn-ghost" style={{ gap:8, fontSize:13 }}>
-            <User size={14} />
-            {userProfile ? <span>{userProfile.name} <span style={{ opacity:0.5 }}>· Edit Profile</span></span> : 'Set Profile for Email Automation'}
+          <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', border: '1.5px solid rgba(255,255,255,0.1)' }}>
+            {(resumeData?.name || 'Priya Sharma').substring(0, 2).toUpperCase()}
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar Container */}
+      <div className="card-static" style={{ padding: 24, marginBottom: 28, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16 }}>
+        <div style={{ position: 'relative', width: '100%', marginBottom: 16 }}>
+          <input 
+            value={role} 
+            onChange={e => setRole(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && doSearch()}
+            placeholder="Find Your Next Job (e.g., Senior Frontend Engineer)" 
+            className="inp" 
+            style={{ 
+              height: 48, 
+              paddingLeft: 18, 
+              paddingRight: 110, 
+              borderRadius: 10, 
+              border: '1px solid var(--teal)', 
+              background: 'rgba(6, 13, 26, 0.4)',
+              fontSize: 14.5
+            }} 
+          />
+          <button 
+            onClick={() => doSearch()} 
+            disabled={loading || !role.trim()} 
+            className="btn" 
+            style={{ 
+              position: 'absolute', 
+              right: 5, 
+              top: 5, 
+              height: 38, 
+              background: 'linear-gradient(135deg, #00c9a7, #0891b2)', 
+              color: '#060d1a', 
+              fontWeight: 800, 
+              borderRadius: 8, 
+              padding: '0 20px',
+              fontSize: 13
+            }}
+          >
+            {loading ? 'Searching...' : 'Search'}
           </button>
         </div>
 
-        {!resumeAnalyzed && (
-          <div style={{ marginTop:14, padding:'10px 16px', background:'rgba(245,158,11,0.05)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:10, display:'flex', alignItems:'center', gap:10, fontSize:13, color:'#fbbf24' }}>
-            <AlertCircle size={15} />
-            <span>Upload your resume in <strong>Resume Match</strong> to see your personal fit % for each job</span>
-          </div>
-        )}
-      </div>
-
-      {/* Search Bar */}
-      <div className="card-static" style={{ padding:20, marginBottom:20 }}>
-        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-          <div style={{ position:'relative', flex:'2', minWidth:220 }}>
-            <Search size={15} style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-3)' }} />
-            <input value={role} onChange={e => setRole(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && doSearch()}
-              placeholder="Search any role (e.g. Software Engineer, Marketing, Doctor, Sales, Teacher...)"
-              className="inp" style={{ paddingLeft:38, height:46, fontSize:15 }} />
-          </div>
-          <select value={city} onChange={e => setCity(e.target.value)} className="inp" style={{ width:160, height:46 }}>
-            {CITIES.map(c => <option key={c}>{c}</option>)}
-          </select>
-          <select value={experience} onChange={e => setExp(e.target.value)} className="inp" style={{ width:150, height:46 }}>
-            {EXP_OPTS.map(e => <option key={e}>{e}</option>)}
-          </select>
-          <button onClick={() => doSearch()} disabled={loading || !role.trim()} className="btn btn-primary" style={{ height:46, paddingInline:28, whiteSpace:'nowrap' }}>
-            {loading ? <><div className="spinner" />Searching...</> : <><Search size={15} />Find Jobs</>}
-          </button>
-        </div>
-        {/* Presets removed per request */}
-      </div>
-
-      {/* Content */}
-      {!hasSearched && !loading && (
-        <div className="empty-state">
-          <div className="empty-icon float"><Briefcase size={28} color="var(--teal)" /></div>
-          <h3 style={{ fontSize:18, fontWeight:700 }}>Find your next opportunity</h3>
-          <p style={{ fontSize:13.5, color:'var(--text-3)' }}>Search any role above to look up open vacancies.</p>
-        </div>
-      )}
-
-      {loading && (
-        <div className="empty-state">
-          <div className="spinner spinner-teal" style={{ width:48, height:48, borderWidth:4 }} />
-          <h3 style={{ fontSize:17, fontWeight:700, marginTop:16 }}>Searching open positions...</h3>
-          <p style={{ fontSize:13, color:'var(--text-3)' }}>Scanning 100+ companies across India</p>
-        </div>
-      )}
-
-      {!loading && hasSearched && (
-        <div style={{ display:'grid', gridTemplateColumns: selected ? '1fr 440px' : '1fr', gap:20, alignItems:'start' }}>
-          {/* List */}
-          <div>
-            {/* Filter row */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
-              <div style={{ fontSize:13.5, color:'var(--text-2)', fontWeight:600 }}>
-                <span style={{ color:'var(--teal)', fontWeight:900, fontSize:17 }}>{filtered.length}</span> positions · {city}
-              </div>
-              <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                <Filter size={13} color="var(--text-3)" />
-                <select value={modeFilter} onChange={e => setModeFilter(e.target.value)} className="inp" style={{ height:34, width:'auto', fontSize:12 }}>
-                  {['Any','On-site','Hybrid','Remote','WFH'].map(m => <option key={m}>{m}</option>)}
-                </select>
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="inp" style={{ height:34, width:'auto', fontSize:12 }}>
-                  {['Any','Full-time','Internship','Contract'].map(t => <option key={t}>{t}</option>)}
-                </select>
-                <button onClick={() => doSearch()} className="btn btn-ghost btn-icon" style={{ height:34, width:34 }} title="Refresh">
-                  <RefreshCw size={13} />
-                </button>
-              </div>
+        {/* Dropdown Filters */}
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {[
+            { value: city, onChange: setCity, options: CITIES, placeholder: 'Location' },
+            { value: experience, onChange: setExp, options: EXP_OPTS, placeholder: 'Experience' },
+            { value: industry, onChange: setIndustry, options: INDUSTRIES, placeholder: 'Industry' }
+          ].map(filter => (
+            <div key={filter.placeholder} style={{ position: 'relative', display: 'inline-block' }}>
+              <select 
+                value={filter.value} 
+                onChange={e => filter.onChange(e.target.value)} 
+                style={{ 
+                  padding: '8px 32px 8px 16px', 
+                  background: 'rgba(255,255,255,0.04)', 
+                  border: '1px solid var(--border)', 
+                  borderRadius: 20, 
+                  color: 'var(--text-2)', 
+                  fontSize: 13, 
+                  fontWeight: 600, 
+                  appearance: 'none', 
+                  cursor: 'pointer' 
+                }}
+              >
+                <option value="" disabled>{filter.placeholder}</option>
+                {filter.options.map(opt => (
+                  <option key={opt} value={opt} style={{ background: '#0a1628', color: '#e8f0fe' }}>{opt}</option>
+                ))}
+              </select>
+              <ChevronDown size={13} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--text-3)' }} />
             </div>
+          ))}
+        </div>
+      </div>
 
-            {filtered.length === 0 ? (
-              <div className="empty-state">
-                <div style={{ fontSize:40 }}>🔍</div>
-                <h3 style={{ fontSize:16, fontWeight:700 }}>No results with current filters</h3>
-                <button onClick={() => { setModeFilter('Any'); setTypeFilter('Any'); }} className="btn btn-ghost btn-sm">Reset filters</button>
-              </div>
-            ) : (
-              filtered.map(job => (
-                <JobCard key={job.id} job={job} selected={selected?.id === job.id}
-                  onSelect={setSelected} resumeAnalyzed={resumeAnalyzed} />
-              ))
-            )}
-
-            {/* Load More */}
-            {hasMore && !loading && (
-              <div style={{ textAlign:'center', padding:'20px 0' }}>
-                <button onClick={loadMore} disabled={loadingMore} className="btn btn-ghost" style={{ minWidth:180 }}>
-                  {loadingMore ? <><div className="spinner" />Loading more...</> : <><Zap size={14} />Load More Jobs</>}
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Detail Panel */}
-          {selected && (
-            <JobDetailPanel
-              job={selected} onClose={() => setSelected(null)}
-              onSave={handleSaveJob} userProfile={userProfile}
-              onWriteEmail={handleWriteEmail}
-              onGhostRate={handleGhostRate}
-              onFollowup={handleFollowup}
-              onInterview={handleInterview}
-              resumeAnalyzed={resumeAnalyzed}
-            />
+      {/* Main Jobs Listing */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '80px 0' }}>
+          <div className="spinner spinner-teal" style={{ width: 44, height: 44 }} />
+          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Searching open positions...</span>
+        </div>
+      ) : (
+        <>
+          {filtered.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '60px 0', border: '1px dashed var(--border)', borderRadius: 16, color: 'var(--text-3)' }}>
+              <Briefcase size={36} style={{ marginBottom: 12, opacity: 0.3 }} />
+              <h3>No jobs found matching your filters</h3>
+              <p style={{ fontSize: 13, marginTop: 4 }}>Try clearing some filters or searching a different role.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+              {filtered.map(job => (
+                <JobCard 
+                  key={job.id} 
+                  job={job} 
+                  onOutreach={setEmailJob}
+                  onSimulate={(j) => onSimulateInterview && onSimulateInterview(j.company, j.title, j.description || j.responsibilities?.join('\n') || '')}
+                  isSaved={savedJobs.includes(job.id)}
+                  onToggleSave={handleToggleSave}
+                />
+              ))}
+            </div>
           )}
-        </div>
+
+          {hasMore && (
+            <div style={{ textAlign: 'center', marginTop: 32 }}>
+              <button onClick={loadMore} disabled={loadingMore} className="btn btn-ghost" style={{ borderRadius: 20, padding: '10px 24px', fontSize: 13 }}>
+                {loadingMore ? 'Loading...' : 'Load More Jobs'}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}

@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import {
   Mic, Send, ChevronRight, RotateCcw, Trophy, Clock,
   CheckCircle2, XCircle, Lightbulb, Star, BarChart3,
-  Play, Pause, ArrowRight, Brain, Target, Zap, Volume2, VolumeX, MicOff
+  Play, Pause, ArrowRight, Brain, Target, Zap, Volume2, VolumeX, MicOff, VideoOff
 } from 'lucide-react';
 
 const TYPE_COLORS = {
@@ -38,7 +38,8 @@ function GradeRing({ grade, score }) {
 }
 
 export default function InterviewSim({ company, role, jobDescription, onClose }) {
-  const [phase, setPhase]         = useState('start'); // start | loading | interview | scoring | complete
+  const [phase, setPhase]         = useState('start');
+  const [showTextInput, setShowTextInput] = useState(false);
   const [session, setSession]     = useState(null);
   const [currentQ, setCurrentQ]   = useState(0);
   const [answer, setAnswer]       = useState('');
@@ -58,6 +59,7 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
   const [stream, setStream]             = useState(null);
   const [isAiSpeaking, setIsAiSpeaking] = useState(false);
   const videoRef                        = useRef(null);
+  const canvasRef                       = useRef(null);
 
   // Video recording states
   const [recordings, setRecordings]     = useState([]);
@@ -76,14 +78,18 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
   }, []);
 
   const startRecording = (s, qIdx) => {
-    if (!s) return;
+    if (!s || typeof window.MediaRecorder === 'undefined') return;
     try {
       chunksRef.current = [];
       let mime = 'video/webm;codecs=vp9,opus';
-      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm;codecs=vp8,opus';
-      if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
+      if (window.MediaRecorder.isTypeSupported && !window.MediaRecorder.isTypeSupported(mime)) {
+        mime = 'video/webm;codecs=vp8,opus';
+      }
+      if (window.MediaRecorder.isTypeSupported && !window.MediaRecorder.isTypeSupported(mime)) {
+        mime = 'video/webm';
+      }
       
-      const mediaRecorder = new MediaRecorder(s, { mimeType: mime });
+      const mediaRecorder = new window.MediaRecorder(s, { mimeType: mime });
       mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
           chunksRef.current.push(e.data);
@@ -122,28 +128,32 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
 
   useEffect(() => {
     if (phase === 'interview') {
-      // Attempt 1: Capture video and audio (mic)
-      navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: true })
-        .then((s) => {
-          setStream(s);
-          if (videoRef.current) {
-            videoRef.current.srcObject = s;
-          }
-        })
-        .catch((err) => {
-          console.warn('Microphone + Camera access failed. Retrying with video-only fallback...', err);
-          // Fallback Attempt: Capture video only (in case mic is blocked or missing)
-          navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false })
-            .then((s) => {
-              setStream(s);
-              if (videoRef.current) {
-                videoRef.current.srcObject = s;
-              }
-            })
-            .catch((err2) => {
-              console.warn('Webcam stream capture failed completely:', err2);
-            });
-        });
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: true })
+          .then((s) => {
+            setStream(s);
+            if (videoRef.current) {
+              videoRef.current.srcObject = s;
+            }
+          })
+          .catch((err) => {
+            console.warn('Microphone + Camera access failed. Retrying with video-only fallback...', err);
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+              navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false })
+                .then((s2) => {
+                  setStream(s2);
+                  if (videoRef.current) {
+                    videoRef.current.srcObject = s2;
+                  }
+                })
+                .catch((err2) => {
+                  console.warn('Webcam stream capture failed completely:', err2);
+                });
+            }
+          });
+      } else {
+        console.warn('getUserMedia is not supported on this browser/device.');
+      }
     } else {
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
@@ -195,13 +205,130 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
     }
   }, [phase, currentQ, session, voiceEnabled]);
 
+  useEffect(() => {
+    if (!isListening || !stream) return;
+    let audioCtx;
+    let source;
+    let analyser;
+    let animationFrameId;
+
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const draw = () => {
+        animationFrameId = requestAnimationFrame(draw);
+        analyser.getByteFrequencyData(dataArray);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#00c9a7';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#00c9a7';
+        ctx.beginPath();
+
+        const sliceWidth = canvas.width / bufferLength;
+        let x = 0;
+
+        for (let i = 0; i < bufferLength; i++) {
+          const v = dataArray[i] / 128.0;
+          const y = (v * canvas.height) / 2;
+
+          if (i === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+
+          x += sliceWidth;
+        }
+
+        ctx.lineTo(canvas.width, canvas.height / 2);
+        ctx.stroke();
+      };
+
+      draw();
+    } catch (e) {
+      console.warn('Analyser failed:', e);
+    }
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (source) source.disconnect();
+      if (audioCtx && audioCtx.state !== 'closed') audioCtx.close();
+    };
+  }, [isListening, stream]);
+
+  useEffect(() => {
+    if (isListening && stream) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let phaseVal = 0;
+
+    const drawSimulated = () => {
+      animationFrameId = requestAnimationFrame(drawSimulated);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = 'rgba(0, 201, 167, 0.4)';
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#00c9a7';
+      
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const y = canvas.height / 2 + Math.sin(x * 0.05 + phaseVal) * 8;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.3)';
+      ctx.beginPath();
+      for (let x = 0; x < canvas.width; x++) {
+        const y = canvas.height / 2 + Math.sin(x * 0.03 - phaseVal * 0.7) * 5;
+        if (x === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      phaseVal += 0.05;
+    };
+
+    drawSimulated();
+
+    return () => {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [isListening, stream]);
+
   const toggleListening = () => {
+    if (!recognitionRef.current) {
+      toast.error('Voice transcription is not supported in this browser. Please type your answer.');
+      return;
+    }
     if (isListening) {
-      recognitionRef.current?.stop();
+      recognitionRef.current.stop();
     } else {
-      if (answer) setAnswer(''); // Clear before new dictation to avoid messy appends
-      try { recognitionRef.current?.start(); setIsListening(true); } 
-      catch (e) { toast.error('Microphone not available'); }
+      if (answer) setAnswer('');
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (e) {
+        toast.error('Microphone not available');
+      }
     }
   };
 
@@ -239,6 +366,7 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
       const q = session.questions[currentQ];
       const { data } = await featuresAPI.scoreAnswer({
         company, role,
+        question:      q.question,
         userAnswer:    answer,
         questionIndex: currentQ,
         jobDescription,
@@ -419,212 +547,230 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
   const qColor = TYPE_COLORS[q.type] || '#64748b';
 
   return (
-    <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16, minHeight: 520, maxWidth: 980, margin: '0 auto' }}>
-      {/* Progress bar */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600 }}>Question {currentQ + 1} of {session.questions.length}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 20, background: `${timerColor}12`, border: `1px solid ${timerColor}30` }}>
-            <Clock size={12} color={timerColor} />
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: timerColor, fontVariantNumeric: 'tabular-nums' }}>{mins}:{secs}</span>
-            <button onClick={() => setTimerA(!timerActive)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
-              {timerActive ? <Pause size={11} color={timerColor} /> : <Play size={11} color={timerColor} />}
-            </button>
+    <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 940, margin: '0 auto', background: '#060d1a', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* Simulator Header Row */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+            <Mic size={18} />
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#ffffff', letterSpacing: '-0.5px', lineHeight: 1 }}>AI INTERVIEW</div>
+            <div style={{ fontSize: 11.5, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '1px', marginTop: 3 }}>SIMULATOR</div>
           </div>
         </div>
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${((currentQ) / session.questions.length) * 100}%` }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.15)', fontSize: 11, fontWeight: 700, color: '#f43f5e' }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f43f5e', animation: 'pulse 1s infinite' }} />
+            RECORDING
+          </div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: '#ffffff', fontVariantNumeric: 'tabular-nums' }}>
+            {mins}:{secs}
+          </div>
         </div>
       </div>
 
-      {/* Main Grid: Split Screen */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 10, alignItems: 'stretch' }} className="interview-grid">
+      <div style={{ fontSize: 13, color: 'var(--text-3)' }}>
+        Candidate: <strong style={{ color: 'var(--text-1)' }}>{resumeData?.name || 'Sarah Jenkins'}</strong>
+      </div>
+
+      {/* Main Grid: Split view */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24, alignItems: 'stretch' }} className="interview-grid">
         
-        {/* Left Side: Virtual Video Call (AI Interviewer + User Camera) */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* AI Interviewer Pane */}
-          <div className="card-static" style={{
-            position: 'relative', height: 210, borderRadius: 16,
-            background: 'linear-gradient(135deg, #0d1e36, #071224)',
-            border: '1px solid rgba(0, 201, 167, 0.15)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              width: 54, height: 54, borderRadius: '50%',
-              background: 'rgba(0, 201, 167, 0.12)',
-              border: '1.5px solid var(--border-teal)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, color: 'var(--teal)', fontWeight: 800,
-              boxShadow: '0 8px 24px rgba(0,201,167,0.15)',
-              marginBottom: 12,
-              animation: isAiSpeaking ? 'pulse 1.5s infinite' : 'none'
-            }}>
-              HX
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>HireX AI Technical Lead</div>
-            <div style={{ fontSize: 11, color: 'var(--teal)', marginTop: 4, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block', animation: 'pulse 1s infinite' }} />
-              {isAiSpeaking ? 'Speaking...' : 'Listening'}
-            </div>
-
-            {/* Audio Waveform Animation when AI speaks */}
-            <div style={{
-              position: 'absolute', bottom: 12, display: 'flex', gap: 3, alignItems: 'center', height: 24
-            }}>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => {
-                const heights = [8, 18, 12, 22, 10, 16, 20, 12];
-                const animDuration = ['0.6s', '0.8s', '0.5s', '0.9s', '0.7s', '0.6s', '0.8s', '0.5s'];
-                return (
-                  <div key={bar} style={{
-                    width: 3,
-                    borderRadius: 1.5,
-                    background: 'var(--teal)',
-                    height: isAiSpeaking ? heights[bar - 1] : 4,
-                    animation: isAiSpeaking ? `bounceWave ${animDuration[bar - 1]} ease-in-out infinite alternate` : 'none',
-                    transition: 'all 0.3s ease'
-                  }} />
-                );
-              })}
-            </div>
-          </div>
-
-          {/* User Webcam Preview */}
-          <div className="card-static" style={{
-            position: 'relative', height: 210, borderRadius: 16,
-            background: '#040b17', border: '1px solid rgba(255,255,255,0.06)',
-            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center'
-          }}>
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                width: '100%', height: '100%', objectFit: 'cover',
-                transform: 'scaleX(-1)', // mirror effect
-                display: stream ? 'block' : 'none'
-              }}
-            />
-            {!stream && (
-              <div style={{ textAlign: 'center', padding: 20 }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: '50%',
-                  background: 'rgba(244, 63, 94, 0.08)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 12px', border: '1px solid rgba(244, 63, 94, 0.2)'
-                }}>
-                  <MicOff size={18} color="#f43f5e" />
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>Webcam Off</div>
-                <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4, maxWidth: 220 }}>
-                  Grant camera permissions to enable video interview simulation.
-                </div>
-              </div>
-            )}
-            
-            {stream && (
+        {/* Left Side: User Webcam feed with glowing border */}
+        <div style={{
+          position: 'relative',
+          height: 380,
+          borderRadius: 16,
+          border: '2px solid #00c9a7',
+          boxShadow: '0 0 24px rgba(0, 201, 167, 0.25)',
+          overflow: 'hidden',
+          background: '#040b17',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              transform: 'scaleX(-1)',
+              display: stream ? 'block' : 'none'
+            }}
+          />
+          {!stream && (
+            <div style={{ textAlign: 'center', padding: 20 }}>
               <div style={{
-                position: 'absolute', top: 12, left: 12,
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '3px 8px', borderRadius: 20, background: 'rgba(16,185,129,0.15)',
-                border: '1px solid rgba(16,185,129,0.3)', fontSize: 10.5, color: '#10b981', fontWeight: 700
+                width: 44, height: 44, borderRadius: '50%',
+                background: 'rgba(244, 63, 94, 0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                margin: '0 auto 12px', border: '1px solid rgba(244, 63, 94, 0.2)'
               }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', animation: 'pulse 1s infinite' }} />
-                LIVE PREVIEW
+                <VideoOff size={18} color="#f43f5e" />
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right Side: Active Question & Input */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Question Box */}
-          <div style={{ padding: '16px 20px', background: `${qColor}08`, border: `1px solid ${qColor}25`, borderRadius: 12, borderLeft: `3px solid ${qColor}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 6, background: `${qColor}15`, color: qColor }}>{q.type}</span>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{Math.floor((q.timeLimit || 120) / 60)} min suggested</span>
-            </div>
-            <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)', margin: 0, lineHeight: 1.6 }}>{q.question}</p>
-          </div>
-
-          {/* Hint */}
-          {q.hint && (
-            <div style={{ display: 'flex', gap: 10, padding: '10px 14px', background: 'rgba(245,158,11,0.05)', borderRadius: 9, border: '1px solid rgba(245,158,11,0.15)', alignItems: 'flex-start' }}>
-              <Lightbulb size={14} color="#fbbf24" style={{ flexShrink: 0, marginTop: 2 }} />
-              <p style={{ fontSize: 12.5, color: '#fbbf24', margin: 0, lineHeight: 1.5 }}>{q.hint}</p>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)' }}>Webcam Off</div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 4, maxWidth: 220 }}>
+                Grant camera permissions to enable video interview simulation.
+              </div>
             </div>
           )}
+          
+          {stream && (
+            <div style={{
+              position: 'absolute', top: 16, left: 16,
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '4px 10px', borderRadius: 20, background: 'rgba(16,185,129,0.15)',
+              border: '1px solid rgba(16,185,129,0.35)', fontSize: 10.5, color: '#10b981', fontWeight: 700,
+              zIndex: 10
+            }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#10b981', animation: 'pulse 1s infinite' }} />
+              LIVE FEED
+            </div>
+          )}
+        </div>
 
-          {/* Text Area */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px' }}>YOUR ANSWER</label>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {isListening && (
-                  <div className="audio-wave-container" style={{ marginRight: 6 }}>
-                    <div className="audio-bar" />
-                    <div className="audio-bar" />
-                    <div className="audio-bar" />
-                    <div className="audio-bar" />
-                    <div className="audio-bar" />
-                  </div>
-                )}
-                <button onClick={() => { setVoiceEnabled(!voiceEnabled); window.speechSynthesis?.cancel(); }} className="btn-icon" title={voiceEnabled ? 'Mute AI' : 'Unmute AI'} style={{ width: 28, height: 28, background: voiceEnabled ? 'rgba(0,201,167,0.1)' : 'var(--bg-surface)', border: `1px solid ${voiceEnabled ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, color: voiceEnabled ? '#00c9a7' : 'var(--text-3)' }}>
-                  {voiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
-                </button>
-                <button onClick={toggleListening} className="btn-icon" title={isListening ? 'Stop Mic' : 'Start Mic'} style={{ width: 28, height: 28, background: isListening ? 'rgba(244,63,94,0.1)' : 'var(--bg-surface)', border: `1px solid ${isListening ? 'rgba(244,63,94,0.3)' : 'var(--border)'}`, color: isListening ? '#f43f5e' : 'var(--text-3)', animation: isListening ? 'pulse 2s infinite' : 'none' }}>
-                  {isListening ? <Mic size={13} /> : <MicOff size={13} />}
-                </button>
-              </div>
+        {/* Right Side: Active Question */}
+        <div style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 16,
+          padding: 28,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          height: 380
+        }}>
+          <div>
+            <div style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 12 }}>
+              Question {currentQ + 1}
             </div>
-            <textarea
-              ref={textRef}
-              value={answer}
-              onChange={e => setAnswer(e.target.value)}
-              placeholder={isListening ? "Listening... Speak your answer clearly." : "Type your answer here... Or click the microphone icon to speak."}
-              className="inp"
-              rows={6}
-              style={{ resize: 'vertical', fontSize: 14, lineHeight: 1.7, borderColor: isListening ? '#f43f5e' : 'var(--border)', boxShadow: isListening ? '0 0 0 1px rgba(244,63,94,0.2)' : 'none' }}
-            />
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{answer.split(/\s+/).filter(Boolean).length} words</span>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Aim for 100-200 words</span>
-            </div>
+            
+            {showTextInput ? (
+              <textarea
+                ref={textRef}
+                value={answer}
+                onChange={e => setAnswer(e.target.value)}
+                placeholder="Type your answer here..."
+                className="inp"
+                rows={8}
+                style={{ 
+                  resize: 'none', 
+                  fontSize: 14, 
+                  lineHeight: 1.7, 
+                  background: 'rgba(6, 13, 26, 0.4)', 
+                  border: '1px solid rgba(0, 201, 167, 0.25)' 
+                }}
+              />
+            ) : (
+              <>
+                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
+                  {q.question}
+                </p>
+                <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, margin: 0 }}>
+                  Please provide a detailed response. Your answer is being transcribed.
+                </p>
+              </>
+            )}
           </div>
 
-          {/* Submit button */}
-          <button onClick={submitAnswer} disabled={scoring || !answer.trim()} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '13px' }}>
-            {scoring
-              ? <><div className="spinner" /> Scoring your answer...</>
-              : currentQ + 1 >= session.questions.length
-                ? <><Trophy size={16} /> Submit & See Results</>
-                : <><ArrowRight size={16} /> Submit & Next Question</>}
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <button 
+              onClick={() => setShowTextInput(!showTextInput)} 
+              className="btn btn-ghost btn-sm" 
+              style={{ fontSize: 11, height: 32, gap: 5, borderColor: 'rgba(255,255,255,0.06)' }}
+            >
+              {showTextInput ? '🎤 Switch to Mic' : '⌨️ Type Answer'}
+            </button>
+            
+            {isListening ? (
+              <div style={{ fontSize: 12.5, color: '#f43f5e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f43f5e', animation: 'pulse 1s infinite' }} />
+                Transcribing...
+              </div>
+            ) : (
+              <div style={{ fontSize: 12.5, color: 'var(--text-3)', fontWeight: 500 }}>
+                Current Time: {mins}:{secs}
+              </div>
+            )}
+          </div>
         </div>
 
       </div>
 
-      {/* CSS Keyframes for the bouncing waveform */}
+      {/* Bottom Area: Controls and Audio Waveform */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginTop: 12 }}>
+        {/* Left Side: Round controls */}
+        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <button 
+              onClick={submitAnswer} 
+              disabled={scoring || (!answer.trim() && !isListening)}
+              style={{ 
+                width: 48, 
+                height: 48, 
+                borderRadius: '50%', 
+                background: 'rgba(59, 130, 246, 0.1)', 
+                border: '1px solid rgba(59, 130, 246, 0.3)', 
+                color: '#3b82f6', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <ChevronRight size={20} />
+            </button>
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '0.5px' }}>NEXT</span>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <button 
+              onClick={() => setPhase('complete')}
+              style={{ 
+                width: 48, 
+                height: 48, 
+                borderRadius: '50%', 
+                background: 'rgba(244, 63, 94, 0.1)', 
+                border: '1px solid rgba(244, 63, 94, 0.3)', 
+                color: '#f43f5e', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <div style={{ width: 14, height: 14, background: '#f43f5e', borderRadius: 2 }} />
+            </button>
+            <span style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '0.5px' }}>END INTERVIEW</span>
+          </div>
+        </div>
+
+        {/* Right Side: Audio Waveform Canvas */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <canvas 
+            ref={canvasRef} 
+            width="500" 
+            height="48" 
+            style={{ width: '100%', height: 48, background: 'transparent' }} 
+          />
+          <span style={{ fontSize: 10.5, color: 'var(--text-3)', fontWeight: 700, letterSpacing: '0.5px' }}>AUDIO INPUT</span>
+        </div>
+      </div>
+
       <style>{`
-        @keyframes bounceWave {
-          0% { height: 4px; }
-          100% { height: 22px; }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
         }
         @media (max-width: 768px) {
           .interview-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-
-      {/* Score history mini */}
-      {scores.length > 0 && (
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-          {scores.map((s, i) => {
-            const col = s.result?.score >= 80 ? '#10b981' : s.result?.score >= 60 ? '#f59e0b' : '#f43f5e';
-            return <span key={i} style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: `${col}15`, color: col }}>Q{i+1}: {s.result?.score}</span>;
-          })}
-        </div>
-      )}
     </div>
   );
 }

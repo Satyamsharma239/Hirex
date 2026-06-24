@@ -49,3 +49,6 @@ Visualize your application velocity (Applied, Interviewing, Offered) using inter
 
 ### ⚡ Smart Career Tools (Resume Match, Cover Letter, Career Card)
 ![ATS Scanner & Career Tools](./assets/smart_tools.png)
+
+### 🎙️ AI Voice Interview Simulator
+![AI Voice Interview Simulator](./assets/voice_interview.png)

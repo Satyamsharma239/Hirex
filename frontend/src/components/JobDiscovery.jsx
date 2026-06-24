@@ -341,7 +341,7 @@ function JobCard({ job, selected, onSelect, resumeAnalyzed }) {
               <MapPin size={11} />{job.location}
             </span>
             <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-3)', opacity: 0.4 }} />
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fbbf24' }}>{job.salary}</span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#fbbf24' }}>{String(job.salary).includes('₹') ? job.salary : `₹${job.salary}`}</span>
             <span style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--text-3)', opacity: 0.4 }} />
             <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, fontWeight: 600, background: `${modeColors[job.mode] || '#3b82f6'}12`, color: modeColors[job.mode] || '#3b82f6' }}>{job.mode}</span>
             <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, fontWeight: 600, background: `${typeColors[job.type] || '#00c9a7'}12`, color: typeColors[job.type] || '#00c9a7' }}>{job.type}</span>
@@ -414,7 +414,7 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
       {/* Salary + match row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderBottom: '1px solid var(--border)' }}>
         {[
-          { label: 'Salary', value: job.salary, color: '#fbbf24' },
+          { label: 'Salary', value: String(job.salary).includes('₹') ? job.salary : `₹${job.salary}`, color: '#fbbf24' },
           { label: resumeAnalyzed ? 'Match Score' : 'Match Score', value: resumeAnalyzed ? `${job.matchScore}%` : 'N/A', color: matchColor, sub: resumeAnalyzed ? null : 'Upload resume' },
           { label: 'Openings', value: job.openings, color: '#8b5cf6' },
         ].map((s, i) => (

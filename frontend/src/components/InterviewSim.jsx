@@ -560,7 +560,16 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.5px' }}>YOUR ANSWER</label>
-              <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                {isListening && (
+                  <div className="audio-wave-container" style={{ marginRight: 6 }}>
+                    <div className="audio-bar" />
+                    <div className="audio-bar" />
+                    <div className="audio-bar" />
+                    <div className="audio-bar" />
+                    <div className="audio-bar" />
+                  </div>
+                )}
                 <button onClick={() => { setVoiceEnabled(!voiceEnabled); window.speechSynthesis?.cancel(); }} className="btn-icon" title={voiceEnabled ? 'Mute AI' : 'Unmute AI'} style={{ width: 28, height: 28, background: voiceEnabled ? 'rgba(0,201,167,0.1)' : 'var(--bg-surface)', border: `1px solid ${voiceEnabled ? 'rgba(0,201,167,0.3)' : 'var(--border)'}`, color: voiceEnabled ? '#00c9a7' : 'var(--text-3)' }}>
                   {voiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
                 </button>

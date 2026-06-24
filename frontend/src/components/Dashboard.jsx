@@ -19,6 +19,15 @@ const STATUS_META = {
   Rejected:  { badge: 'badge-rejected',  dot: '#f43f5e', emoji: '❌', label: 'Rejected'  },
 };
 
+const getCompanyColor = (companyName) => {
+  const colors = ['#00c9a7', '#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#fb7185', '#ec4899'];
+  let hash = 0;
+  for (let i = 0; i < companyName.length; i++) {
+    hash = companyName.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
 function CountUp({ to }) {
   const [n, setN] = useState(0);
   useEffect(() => {
@@ -135,37 +144,110 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
         </div>
       </div>
 
-      {/* Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px,1fr))', gap: 14, marginBottom: 24 }}>
-        {STAT_CONFIG.map(({ key, label, icon: Icon, color, trackKey, trackLabel, trackColor }) => (
-          <div key={key} className="stat-card" style={{ '--top-gradient': `linear-gradient(90deg, transparent, ${color}60, transparent)` }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{
-                width: 38, height: 38, borderRadius: 10,
-                background: `${color}18`, border: `1px solid ${color}30`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Icon size={17} color={color} />
-              </div>
-              <ArrowUpRight size={13} color="var(--text-3)" />
-            </div>
-            <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--text-1)', letterSpacing: '-1.5px', lineHeight: 1 }}>
-              {loading ? <span style={{ color: 'var(--text-3)', fontSize: 20 }}>—</span> : <CountUp to={stats[key] || 0} />}
-            </div>
-            <div style={{ fontSize: 12.5, color: 'var(--text-3)', marginTop: 6, fontWeight: 600 }}>{label}</div>
-            {trackKey && stats[trackKey] !== undefined && (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{trackLabel}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: trackColor }}>{stats[trackKey]}%</span>
-                </div>
-                <div className="progress-track">
-                  <div className="progress-fill" style={{ width: `${Math.min(stats[trackKey], 100)}%`, background: `linear-gradient(90deg, ${trackColor}, ${trackColor}99)` }} />
-                </div>
-              </div>
-            )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, marginBottom: 24 }}>
+        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>TOTAL APPLICATIONS</span>
+            <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
+              <SlidersHorizontal size={14} color="var(--text-3)" />
+            </button>
           </div>
-        ))}
+          <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>
+            {loading ? '—' : <CountUp to={stats.total || 0} />}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--teal)', marginTop: 4, fontWeight: 600 }}>
+            +12% this month
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', marginTop: 8 }}>
+            <svg viewBox="0 0 100 30" style={{ width: '100%', height: 35, overflow: 'visible' }}>
+              <path d="M 0 25 Q 15 15 30 18 T 60 5 T 90 12 T 100 8" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round" style={{ filter: 'drop-shadow(0px 2px 6px rgba(0,201,167,0.4))' }} />
+            </svg>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Sent</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{stats.applied || 0}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Active</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{(stats.applied || 0) + (stats.interviews || 0)}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>INTERVIEWS SCHEDULED</span>
+            <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
+              <SlidersHorizontal size={14} color="var(--text-3)" />
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 64px', gap: 12, flex: 1, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>
+                {loading ? '—' : <CountUp to={stats.interviews || 0} />}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 4, fontWeight: 600 }}>
+                Active Prep
+              </div>
+            </div>
+            <div style={{ width: 64, height: 64, position: 'relative' }}>
+              <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--amber)" strokeWidth="3" strokeDasharray="85, 100" strokeLinecap="round" style={{ filter: 'drop-shadow(0px 0px 6px rgba(245,158,11,0.3))' }} />
+              </svg>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
+                85%
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Upcoming</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{stats.interviews || 0}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Pending</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{stats.saved || 0}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>OFFERS RECEIVED</span>
+            <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
+              <SlidersHorizontal size={14} color="var(--text-3)" />
+            </button>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 12, flex: 1, alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>
+                {loading ? '—' : <CountUp to={stats.offered || 0} />}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--emerald)', marginTop: 4, fontWeight: 600 }}>
+                1 New Offer
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 42, paddingBottom: 2 }}>
+              <div style={{ width: 8, height: 18, background: 'var(--border)', borderRadius: 2 }} />
+              <div style={{ width: 8, height: 28, background: 'var(--teal)', borderRadius: 2, filter: 'drop-shadow(0px 0px 4px rgba(0,201,167,0.3))' }} />
+              <div style={{ width: 8, height: 38, background: 'var(--blue)', borderRadius: 2, filter: 'drop-shadow(0px 0px 4px rgba(59,130,246,0.3))' }} />
+              <div style={{ width: 8, height: 24, background: 'var(--amber)', borderRadius: 2, filter: 'drop-shadow(0px 0px 4px rgba(245,158,11,0.3))' }} />
+              <div style={{ width: 8, height: 12, background: 'var(--border)', borderRadius: 2 }} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Accepted</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{stats.offered || 0}</div>
+            </div>
+            <div>
+              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Pending</span>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{stats.interviews || 0}</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Application Pipeline - Recharts Funnel */}
@@ -274,64 +356,56 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
             )}
           </div>
         ) : viewMode === 'list' ? (
-          <div style={{ overflowX: 'auto' }}>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  {['Company', 'Role', 'Status', 'Location', 'Date Applied', 'Actions'].map(h => (
-                    <th key={h}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(job => {
-                  const m = STATUS_META[job.status] || STATUS_META.Applied;
-                  return (
-                    <tr key={job._id} onClick={(e) => {
-                      if (e.target.tagName !== 'SELECT' && e.target.tagName !== 'BUTTON' && !e.target.closest('button') && !e.target.closest('select')) {
-                        setSelectedJob(job);
-                      }
-                    }} style={{ cursor: 'pointer' }}>
-                      <td>
-                        <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{job.company}</div>
-                        {job.salary && (
-                          <div style={{ fontSize: 11.5, color: 'var(--text-3)', marginTop: 2, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <DollarSign size={10} />{job.salary}
-                          </div>
-                        )}
-                      </td>
-                      <td style={{ color: 'var(--text-2)' }}>{job.role}</td>
-                      <td>
-                        <select value={job.status}
-                          onChange={e => handleStatusChange(job._id, e.target.value)}
-                          className={`badge ${m.badge}`}
-                          style={{ cursor: 'pointer', border: 'none', background: 'transparent', fontWeight: 600 }}
-                          onClick={e => e.stopPropagation()}>
-                          {Object.keys(STATUS_META).map(s => (
-                            <option key={s} value={s} style={{ background: '#0a1628', color: '#e8f0fe' }}>{STATUS_META[s].emoji} {s}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: 12.5, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {job.location ? <><MapPin size={11} />{job.location}</> : '—'}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: 12.5, color: 'var(--text-3)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Calendar size={11} />
-                          {new Date(job.appliedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                        </div>
-                      </td>
-                      <td>
-                        <span style={{ fontSize: 12, color: 'var(--teal)', fontWeight: 600 }}>Open Co-Pilot →</span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            <div style={{ padding: '12px 20px', textAlign: 'center', fontSize: 12, color: 'var(--text-3)', borderTop: '1px solid var(--border)' }}>
+          <div style={{ padding: '20px 20px 8px' }}>
+            {filtered.map(job => {
+              const m = STATUS_META[job.status] || STATUS_META.Applied;
+              const avatarColor = getCompanyColor(job.company);
+              return (
+                <div key={job._id} className="premium-list-card" onClick={() => setSelectedJob(job)} style={{ cursor: 'pointer' }}>
+                  <div className="avatar-container" style={{ background: `${avatarColor}15`, border: `1.5px solid ${avatarColor}40`, color: avatarColor }}>
+                    {job.company.substring(0, 1).toUpperCase()}
+                  </div>
+                  
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text-1)' }}>{job.company}</span>
+                      <select value={job.status}
+                        onChange={e => handleStatusChange(job._id, e.target.value)}
+                        className={`badge ${m.badge}`}
+                        style={{ cursor: 'pointer', border: 'none', background: 'transparent', fontWeight: 600, padding: '2px 8px', borderRadius: 12 }}
+                        onClick={e => e.stopPropagation()}>
+                        {Object.keys(STATUS_META).map(s => (
+                          <option key={s} value={s} style={{ background: '#0a1628', color: '#e8f0fe' }}>{STATUS_META[s].emoji} {s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 500 }}>
+                      {job.role}
+                      {job.salary && (
+                        <span style={{ color: 'var(--text-3)', marginLeft: 8 }}>
+                          · {String(job.salary).includes('₹') ? job.salary : `₹${job.salary}`}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                    {job.location && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--text-3)' }}>
+                        <MapPin size={13} /> {job.location}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: 'var(--text-3)' }}>
+                      <Calendar size={13} /> {new Date(job.appliedDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                    </div>
+                    <span style={{ fontSize: 12.5, color: 'var(--teal)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      Open Co-Pilot <ArrowUpRight size={13} />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            <div style={{ padding: '12px 0', textAlign: 'center', fontSize: 12, color: 'var(--text-3)' }}>
               Showing {filtered.length} of {jobs.length} applications
             </div>
           </div>

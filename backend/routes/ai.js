@@ -29,24 +29,28 @@ const upload = multer({
 // ────────────────────────────────────────────────────────────────────────────────
 router.post('/analyze-resume', upload.single('resume'), async (req, res) => {
   try {
-    const { jobDescription } = req.body;
-    if (!req.file) return res.status(400).json({ error: 'Please upload a PDF or DOCX resume' });
+    const { jobDescription, resumeText: rawResumeText } = req.body;
     if (!jobDescription || jobDescription.trim().length < 30)
       return res.status(400).json({ error: 'Please provide a detailed job description (min 30 characters)' });
 
     let resumeText = '';
-    const ext = req.file.originalname.split('.').pop().toLowerCase();
-    
-    if (req.file.mimetype === 'application/pdf' || ext === 'pdf') {
-      const pdfData = await pdfParse(req.file.buffer);
-      resumeText = pdfData.text.trim();
+    if (req.file) {
+      const ext = req.file.originalname.split('.').pop().toLowerCase();
+      if (req.file.mimetype === 'application/pdf' || ext === 'pdf') {
+        const pdfData = await pdfParse(req.file.buffer);
+        resumeText = (pdfData && pdfData.text) ? pdfData.text.trim() : '';
+      } else {
+        const docResult = await mammoth.extractRawText({ buffer: req.file.buffer });
+        resumeText = (docResult && docResult.value) ? docResult.value.trim() : '';
+      }
+    } else if (rawResumeText && rawResumeText.trim().length >= 50) {
+      resumeText = rawResumeText.trim();
     } else {
-      const docResult = await mammoth.extractRawText({ buffer: req.file.buffer });
-      resumeText = docResult.value.trim();
+      return res.status(400).json({ error: 'Please upload a PDF or DOCX resume or provide valid resume text' });
     }
 
     if (resumeText.length < 50)
-      return res.status(400).json({ error: 'Could not extract text from document. Ensure it is not empty or a scanned image.' });
+      return res.status(400).json({ error: 'Resume text is too short. Ensure it has at least 50 characters.' });
 
     const systemPrompt = `You are an expert ATS (Applicant Tracking System) specialist and career coach 
 with deep knowledge of the Indian tech job market. 
@@ -70,7 +74,14 @@ Return a JSON object with these EXACT fields:
   "verdict": "<exactly one of: Excellent Match, Good Match, Moderate Match, Low Match>",
   "summary": "<2-3 sentences: strengths, gaps, overall assessment for this Indian IT role>",
   "atsScore": <integer 0-100 representing ATS keyword match score>,
-  "experienceMatch": "<Fresher OK, or describes gap>"
+  "experienceMatch": "<Fresher OK, or describes gap>",
+  "contact": {
+    "name": "<candidate full name, or empty string if not found>",
+    "email": "<candidate email address, or empty string if not found>",
+    "phone": "<candidate phone/mobile number, or empty string if not found>",
+    "linkedin": "<candidate LinkedIn profile link, or empty string if not found>",
+    "github": "<candidate GitHub profile link, or empty string if not found>"
+  }
 }`;
 
     const result = await generate({ systemPrompt, userPrompt, jsonMode: true });
@@ -121,9 +132,6 @@ Write ONLY the letter. No extra commentary.`;
   }
 });
 
-// ────────────────────────────────────────────────────────────────────────────────
-// 3. INTERVIEW QUESTIONS GENERATOR
-// ────────────────────────────────────────────────────────────────────────────────
 router.post('/interview-questions', async (req, res) => {
   try {
     const { role, jobDescription, experienceLevel } = req.body;
@@ -131,7 +139,7 @@ router.post('/interview-questions', async (req, res) => {
 
     const systemPrompt = `You are a senior technical interviewer at a top Indian tech company.
 You generate realistic, role-specific interview questions based on actual Indian tech interview patterns 
-(TCS, Infosys, Wipro, Flipkart, Paytm, Zomato, FAANG India offices).`;
+(TCS, Infosys, Wipro, Flipkart, Paytm, Zomato, and top-tier tech offices).`;
 
     const userPrompt = `Generate comprehensive interview questions for:
 Role: ${role}
@@ -344,6 +352,90 @@ Return JSON:
     res.json(result);
   } catch (err) {
     console.error('Salary estimate error:', err.message);
+    if (err.message.includes('API key')) return res.status(401).json({ error: 'Invalid Gemini API key. Check backend/.env' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/optimize-xyz', async (req, res) => {
+  try {
+    const { bulletPoint, role = 'Software Developer' } = req.body;
+    if (!bulletPoint || bulletPoint.trim().length < 5) {
+      return res.status(400).json({ error: 'Please enter a valid bullet point (minimum 5 characters)' });
+    }
+
+    const systemPrompt = `You are a senior recruitment expert and resume writer who optimizes candidate resumes using the Action-Impact-Method (AIM) formula.
+AIM formula: "Accomplished [Action] as measured by [Impact], by doing [Method]"
+You rewrite boring or weak bullet points into high-impact, results-oriented achievements containing clear metrics, action verbs, and core technologies.`;
+
+    const userPrompt = `Optimize this experience/project bullet point for a "${role}" resume using the Action-Impact-Method (AIM) formula:
+"${bulletPoint}"
+
+Rules:
+1. Start with a strong action verb (e.g. Architected, Engineered, Optimized, Spearheaded).
+2. Quantify the impact with realistic metrics (e.g. 15%, $50K, 200+ users, 2.5x).
+3. Specify the tech stack or methods used (the Method part).
+4. Output ONLY the optimized bullet point (one sentence, starting with a bullet character like "- " or "• "). Do not include any notes, explanations, or quotes.`;
+
+    const text = await generate({ systemPrompt, userPrompt, jsonMode: false });
+    res.json({ optimized: text.trim() });
+  } catch (err) {
+    console.error('AIM optimization error:', err.message);
+    if (err.message.includes('API key')) return res.status(401).json({ error: 'Invalid Gemini API key. Check backend/.env' });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/recreate-resume-xyz', async (req, res) => {
+  try {
+    const { resumeText, targetRole, skills = [], metrics = '', contact = {} } = req.body;
+    if (!resumeText || resumeText.trim().length < 30) {
+      return res.status(400).json({ error: 'Please upload or provide valid resume text' });
+    }
+
+    const name = contact.name || 'Candidate Name';
+    const email = contact.email || 'email@domain.com';
+    const phone = contact.phone || '+91 99999 99999';
+    const linkedin = contact.linkedin || 'linkedin.com/in/username';
+    const github = contact.github || 'github.com/username';
+
+    const systemPrompt = `You are a senior recruitment expert and elite resume editor. 
+You rewrite candidate resumes from scratch into a standard single-column print-ready text layout. 
+You strictly implement the Action-Impact-Method (AIM) formula on all project and experience bullet points: "Accomplished [Action] as measured by [Impact], by doing [Method]".`;
+
+    const userPrompt = `Recreate and rewrite this candidate's resume to be 100% ATS-compliant and optimized for the target role.
+
+TARGET ROLE: ${targetRole || 'Software Developer'}
+EMPHASIZED KEYWORDS/SKILLS: ${skills.join(', ')}
+USER INCLUDED METRICS/HIGHLIGHTS: ${metrics || 'None specified'}
+
+CONTACT INFORMATION (YOU MUST PLACE THIS EXACTLY AT THE VERY TOP OF THE RESUME, DO NOT USE PLACEHOLDERS):
+Name: ${name}
+Email: ${email}
+Phone: ${phone}
+LinkedIn: ${linkedin}
+GitHub: ${github}
+
+ORIGINAL RESUME TEXT:
+"${resumeText.slice(0, 4500)}"
+
+CRITICAL RULES:
+1. Put the verified contact details (Name, Email, Phone, LinkedIn, GitHub) exactly at the top.
+2. Structure the resume into these sections with clean margins and uppercase headers:
+   - CONTACT INFORMATION
+   - PROFESSIONAL SUMMARY
+   - TECHNICAL SKILLS (categorized cleanly)
+   - PROFESSIONAL EXPERIENCE (use STAR/AIM bullet achievements starting with strong action verbs)
+   - PROJECTS (use STAR/AIM bullet achievements starting with strong action verbs)
+   - EDUCATION
+3. For ALL bullet points in Experience and Projects, use the Action-Impact-Method (AIM) format: "Accomplished [Action] as measured by [Impact], by doing [Method]" (e.g. Optimized client-side render speed by 25% using component lazy-loading and memoization). Include realistic metrics.
+4. STRICT ZERO-DUPLICATION POLICY: A project, job role, accomplishment, skill, or bullet point should NEVER appear twice across different sections. If an item is listed in PROFESSIONAL EXPERIENCE, it MUST NOT appear in PROJECTS. Keep all descriptions unique, non-repetitive, and cleanly segregated.
+5. Output ONLY the complete plain text resume. Do not write any greetings, intros, markdown backticks (like \`\`\`), explanations, or meta commentary.`;
+
+    const text = await generate({ systemPrompt, userPrompt, jsonMode: false });
+    res.json({ optimizedResume: text.trim() });
+  } catch (err) {
+    console.error('Recreate resume AIM error:', err.message);
     if (err.message.includes('API key')) return res.status(401).json({ error: 'Invalid Gemini API key. Check backend/.env' });
     res.status(500).json({ error: err.message });
   }

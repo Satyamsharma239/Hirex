@@ -80,7 +80,7 @@ export default function JobModal({ isOpen, onClose, onSubmit, editingJob }) {
               <div>
                 <label style={labelStyle}>Company Name *</label>
                 <input required value={form.company} onChange={e => set('company', e.target.value)}
-                  placeholder="e.g., Google, TCS, Flipkart..." className="inp" />
+                  placeholder="e.g., TCS, Infosys, Flipkart..." className="inp" />
               </div>
               <div>
                 <label style={labelStyle}>Role / Position *</label>

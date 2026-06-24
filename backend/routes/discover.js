@@ -355,12 +355,9 @@ router.post('/role-jobs', async (req, res) => {
   }
 });
 
-// ════════════════════════════════════════════════════════════════
-// POST /api/discover/ats-audit
-// ════════════════════════════════════════════════════════════════
 router.post('/ats-audit', async (req, res) => {
   try {
-    const { resumeText = '', skills = [] } = req.body;
+    const { resumeText = '', skills = [], contact = {} } = req.body;
     if (!resumeText.trim() || resumeText.length < 30) {
       return res.status(400).json({ error: 'Resume text too short or empty' });
     }
@@ -375,10 +372,23 @@ Candidate Resume Text:
 
 Additional skills: ${skillStr}
 
+VERIFIED CONTACT INFORMATION TO USE AT THE TOP OF THE RESUME (IF PROVIDED):
+Name: ${contact.name || ''}
+Email: ${contact.email || ''}
+Phone: ${contact.phone || ''}
+LinkedIn: ${contact.linkedin || ''}
+GitHub: ${contact.github || ''}
+
+CRITICAL INSTRUCTIONS FOR CANDIDATE INFO EXTRACTION:
+1. Scan the "Candidate Resume Text" carefully to extract the candidate's actual Full Name, Mobile/Phone Number, Email Address, LinkedIn URL, and GitHub URL if they are not already provided in the verified contact section above.
+2. In the "atsOptimizedResumeText" property, you MUST write the full rewritten resume text. At the very top, place the verified contact details (Name, Email, Phone, LinkedIn, GitHub) if provided, or the extracted ones. DO NOT use generic mock placeholders (like "Satyam Sharma" or generic phone numbers) if actual details are provided or present in the text.
+3. Restructure the entire resume into a single-column, clean layout: Contact Info -> Professional Summary -> Technical Skills (categorized) -> Professional Experience (using STAR bullets with action verbs and metrics) -> Academic/Personal Projects -> Education.
+4. Optimize this resume so it is 100% compliant with standard Applicant Tracking Systems, ensuring the candidate achieves a 95-100% ATS score rating.
+
 Return a single JSON object (with no markdown wrappers, no arrays outside fields):
 {
-  "atsGrade": "<A, B, C, D, or F>",
-  "atsScore": <integer 0-100>,
+  "atsGrade": "<A+, A, or B+ depending on the optimized resume>",
+  "atsScore": <integer 95-100 representing the score of this newly optimized resume version>,
   "recruiterSummary": "<3 sentences of expert feedback from a senior recruiter perspective on their strengths and gaps>",
   "formattingAudits": [
     {"rule":"Avoid tables & columns","status":"<Pass / Fail / Warning>","reason":"<why it passed or failed>"},
@@ -394,11 +404,12 @@ Return a single JSON object (with no markdown wrappers, no arrays outside fields
   ],
   "rewrittenSummary": "<ATS-optimized 3-sentence professional summary using high-impact action verbs and metric placeholders>",
   "rewrittenBullets": [
-    "<High-impact resume experience bullet point 1 using STAR/XYZ format (Accomplished X as measured by Y by doing Z)>",
-    "<High-impact resume experience bullet point 2 using STAR/XYZ format>",
-    "<High-impact resume experience bullet point 3 using STAR/XYZ format>",
-    "<High-impact resume experience bullet point 4 using STAR/XYZ format>"
+    "<High-impact resume experience bullet point 1 using STAR/AIM format (Accomplished Action as measured by Impact by doing Method)>",
+    "<High-impact resume experience bullet point 2 using STAR/AIM format>",
+    "<High-impact resume experience bullet point 3 using STAR/AIM format>",
+    "<High-impact resume experience bullet point 4 using STAR/AIM format>"
   ],
+  "atsOptimizedResumeText": "<Full, professional, rewritten single-column resume starting with the candidate's ACTUAL extracted contact details at the top, followed by Summary, Technical Skills, Experience, Projects, and Education sections, fully formatted with clean whitespace and ready for professional recruitment evaluation.>",
   "suitedRoles": [
     {"index":1,"title":"React Developer","fit":98,"reason":"Excellent match with your frontend state and component framework projects.","avgSalary":"6-10 LPA","demand":"Very High"},
     {"index":2,"title":"Frontend Engineer","fit":95,"reason":"Strong JavaScript logic and responsive web interface background.","avgSalary":"5-9 LPA","demand":"Very High"},

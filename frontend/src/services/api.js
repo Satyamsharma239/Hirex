@@ -18,6 +18,8 @@ export const aiAPI = {
   getInsights:               (d)  => API.post('/ai/insights', d),
   getReadinessScore:         (d)  => API.post('/ai/readiness-score', d),
   getSalaryEstimate:         (d)  => API.post('/ai/salary-estimate', d),
+  optimizeXYZ:               (d)  => API.post('/ai/optimize-xyz', d),
+  recreateResumeXYZ:         (d)  => API.post('/ai/recreate-resume-xyz', d),
 };
 
 export const discoverAPI = {

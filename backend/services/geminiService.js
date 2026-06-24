@@ -130,24 +130,52 @@ function getFallbackMock(promptText) {
     return match ? match[1].trim() : 'Satyam Sharma';
   })();
 
+  const extractedEmail = (() => {
+    const match = promptText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+    return match ? match[1].trim() : 'satyam.sharma@email.com';
+  })();
+
+  const extractedPhone = (() => {
+    const match = promptText.match(/(\+?\d[\d-\s()]{8,}\d)/);
+    return match ? match[1].trim() : '+91 98765 43210';
+  })();
+
+  const extractedLinkedin = (() => {
+    const match = promptText.match(/(linkedin\.com\/in\/[a-zA-Z0-9_%+-]+)/i);
+    return match ? match[1].trim() : 'linkedin.com/in/satyamsharma';
+  })();
+
+  const extractedGithub = (() => {
+    const match = promptText.match(/(github\.com\/[a-zA-Z0-9_%+-]+)/i);
+    return match ? match[1].trim() : 'github.com/satyamsharma';
+  })();
+
+  const extractedName = (() => {
+    const match = promptText.match(/Candidate Resume Text:\s*["']?([^\n"'\r]+)/i);
+    if (match && match[1].trim().length > 3 && match[1].trim().length < 50) {
+      return match[1].trim();
+    }
+    return name || 'SATYAM SHARMA';
+  })();
+
   // 0. Senior Recruiter & ATS Expert Audit
   if (p.includes('ats-audit') || p.includes('ats audit') || p.includes('atsgrade') || p.includes('suitedroles')) {
     return {
-      "atsGrade": "B",
-      "atsScore": 81,
-      "recruiterSummary": "The candidate displays high practical proficiency in building full-stack web architectures, particularly with React and Node.js. The main gaps are missing type-safety (TypeScript) and backend scaling (Docker). The layout is mostly parsable but bullet points could be rewritten to better emphasize business value using metrics.",
+      "atsGrade": "A+",
+      "atsScore": 98,
+      "recruiterSummary": "The candidate displays outstanding practical proficiency in building full-stack MERN architectures. The rewritten resume completely resolves legacy multi-column layout parsing errors and structures achievements with STAR bullets. Highly recommended for top tier tech firms.",
       "formattingAudits": [
-        {"rule":"Avoid tables & columns","status":"Warning","reason":"Detected multi-column text containers. Single column layouts are safer for legacy parsing engines."},
-        {"rule":"Standard section headers","status":"Pass","reason":"Using standard headers like 'Education' and 'Skills'."},
-        {"rule":"Font & readability consistency","status":"Pass","reason":"Uniform layout styles with standard sans-serif font."},
-        {"rule":"Contact details location","status":"Pass","reason":"Contact info placed correctly in body text, not nested in headers/footers."}
+        {"rule":"Avoid tables & columns","status":"Pass","reason":"Single-column clean plain text layout. Passes all modern parsing checkers."},
+        {"rule":"Standard section headers","status":"Pass","reason":"Headers are standardized and placed logically."},
+        {"rule":"Font & readability consistency","status":"Pass","reason":"Uniform Times New Roman print formatting applied."},
+        {"rule":"Contact details location","status":"Pass","reason":"Extracted contact details placed properly at the top."}
       ],
       "keywordDensity": [
-        {"keyword":"React","present":true,"count":5},
-        {"keyword":"Node.js","present":true,"count":3},
-        {"keyword":"MongoDB","present":true,"count":2},
-        {"keyword":"Express","present":true,"count":2},
-        {"keyword":"TypeScript","present":false,"count":0},
+        {"keyword":"React","present":true,"count":6},
+        {"keyword":"Node.js","present":true,"count":4},
+        {"keyword":"MongoDB","present":true,"count":3},
+        {"keyword":"Express","present":true,"count":3},
+        {"keyword":"TypeScript","present":true,"count":2},
         {"keyword":"Docker","present":false,"count":0},
         {"keyword":"AWS","present":false,"count":0}
       ],
@@ -158,6 +186,7 @@ function getFallbackMock(promptText) {
         "Engineered secure MongoDB Atlas database schemas with optimized indexing, reducing average query response latency by 35%.",
         "Constructed Node.js event-loop friendly background tasks that automated user email communications, boosting throughput by 40%."
       ],
+      "atsOptimizedResumeText": `${extractedName.toUpperCase()}\n${extractedEmail} | ${extractedPhone} | GitHub: ${extractedGithub} | LinkedIn: ${extractedLinkedin}\n\nPROFESSIONAL SUMMARY\nHighly skilled Software Developer with 1+ years of experience designing and deploying high-impact full-stack web architectures. Specialized in MERN stack development (MongoDB, Express.js, React, Node.js). Proven ability to optimize client-side bundle performance and build robust, secure backend microservices. Active problem solver committed to writing clean, maintainable, and well-documented code.\n\nTECHNICAL SKILLS\n- Frontend Languages & Frameworks: HTML5, CSS3, JavaScript (ES6+), React.js, Redux Toolkit, Tailwind CSS\n- Backend & Databases: Node.js, Express.js, RESTful APIs, MongoDB, Mongoose, REST architecture\n- Tools & DevOps: Git, GitHub, VS Code, Postman, Vercel, Netlify\n\nPROFESSIONAL EXPERIENCE\nSoftware Developer | HireX AI (Project Portfolio)\nJune 2025 - Present | Remote, India\n- Architected and deployed responsive MERN stack web applications using React hooks and Node.js REST routes, driving customer engagement.\n- Optimized client-side bundle performance by 25% through lazy-loading components and caching expensive calculation results.\n- Engineered secure MongoDB Atlas database schemas with optimized indexing, reducing average query response latency by 35%.\n- Constructed Node.js event-loop friendly background tasks that automated user email communications, boosting throughput by 40%.\n\nACADEMIC PROJECTS\nAI-Powered Job Tracker (HireX)\n- Developed an interactive applicant tracking board using React, Node.js, and MongoDB to track 20+ jobs.\n- Implemented client-side local persistence, reducing API redundancy by 40% and providing seamless offline-ready UX.\n\nEDUCATION\nBachelor of Science in Information Technology (BSc IT) | Mumbai University\nGraduated: 2025 | Mumbai, India`,
       "suitedRoles": [
         {"index":1,"title":"React Developer","fit":98,"reason":"Excellent match with your frontend state and component framework projects.","avgSalary":"6-10 LPA","demand":"Very High"},
         {"index":2,"title":"Frontend Engineer","fit":95,"reason":"Strong JavaScript logic and responsive web interface background.","avgSalary":"5-9 LPA","demand":"Very High"},
@@ -184,7 +213,7 @@ function getFallbackMock(promptText) {
   }
 
   // 1. Outreach Email
-  if (p.includes('outreach-email') || p.includes('outreach email') || p.includes('outreach_email')) {
+  if (p.includes('outreach-email') || p.includes('outreach email') || p.includes('outreach_email') || p.includes('outreach') || p.includes('cold-outreach')) {
     return {
       "subject": `Application: ${role} | ${name} | React & Node.js`,
       "body": `Hi ${company} Team,\n\nI hope you're doing well.\n\nMy name is ${name}, and I'm a software developer specializing in building scalable web applications. I saw your opening for the ${role} position and felt compelled to reach out.\n\nI have spent the last year working extensively with React, Node.js, Express, and MongoDB. In my recent projects, I focused on optimizing state management and reducing rendering delays, which resulted in a 30% page load improvement. I believe my hands-on experience matches the responsibilities required for this position at ${company}.\n\nI have attached my resume for your review. I would welcome the opportunity to speak with you or a technical lead about how my skills can contribute to your team.\n\nBest regards,\n${name}\ncandidate@email.com`,
@@ -206,7 +235,14 @@ function getFallbackMock(promptText) {
       "verdict": "Good Match",
       "summary": `The candidate has strong MERN stack foundations. Gaps include production-level TypeScript and cloud deployment containerization. Overall, a highly viable fit for the ${role} position.`,
       "atsScore": 85,
-      "experienceMatch": "Fresher OK - Match matches candidate's BCA/BSc IT entry-level timeline."
+      "experienceMatch": "Fresher OK - Match matches candidate's BCA/BSc IT entry-level timeline.",
+      "contact": {
+        "name": extractedName,
+        "email": extractedEmail,
+        "phone": extractedPhone,
+        "linkedin": extractedLinkedin,
+        "github": extractedGithub
+      }
     };
   }
 
@@ -283,17 +319,70 @@ function getFallbackMock(promptText) {
 
   // 7. Interview Sim Questions
   if (p.includes('interview-sim') || p.includes('mock interview') || p.includes('sessiontitle')) {
+    const compLower = company.toLowerCase();
+    let compQuestions = [];
+    if (compLower.includes('tcs') || compLower.includes('tata consultancy')) {
+      compQuestions = [
+        {"index":0,"type":"Technical","question":"What is the difference between Abstraction and Encapsulation in OOPs?","timeLimit":120,"hint":"Abstraction hides implementation details, encapsulation binds code and data together. Give Java/C++ examples."},
+        {"index":1,"type":"Technical","question":"Write a program in Javascript or Java to check if a number is Prime or Prime Factorization.","timeLimit":180,"hint":"Check divisibility up to sqrt(n). Optimize time complexity."},
+        {"index":2,"type":"Technical","question":"Explain DBMS normalization and the difference between 2NF and 3NF.","timeLimit":120,"hint":"Mention redundancy removal, primary keys, functional dependencies, and transitive dependencies."},
+        {"index":3,"type":"Behavioral","question":"Why do you want to join Tata Consultancy Services (TCS), and are you open to relocate?","timeLimit":120,"hint":"Show loyalty, interest in learning, project domains, and flexibility to relocate to any office location."},
+        {"index":4,"type":"Behavioral","question":"Describe a conflict you had with a team member in a project and how you resolved it.","timeLimit":120,"hint":"Use the STAR method. Keep it professional, focus on communication and final delivery."},
+        {"index":5,"type":"Situational","question":"If you are given a project on a technology you don't know, how will you handle it?","timeLimit":120,"hint":"Explain your quick learning capability, online courses, documentation, and senior guidance."},
+        {"index":6,"type":"Company-Specific","question":"What do you know about TCS's key services, Tata Group values, and recent tech initiatives?","timeLimit":120,"hint":"Mention ethics, corporate social responsibility, and TCS's role in global digital transformation."},
+        {"index":7,"type":"HR","question":"Are you ready to sign the service agreement and work in different shift timings?","timeLimit":120,"hint":"Show absolute readiness and flexibility."}
+      ];
+    } else if (compLower.includes('infosys')) {
+      compQuestions = [
+        {"index":0,"type":"Technical","question":"What is the difference between method overloading and method overriding in OOPs?","timeLimit":120,"hint":"Overloading is compile-time (same class, diff params), Overriding is run-time (subclass overrides parent method)."},
+        {"index":1,"type":"Technical","question":"Explain primary key, unique key, and foreign key in SQL databases.","timeLimit":120,"hint":"Primary key: unique, non-null. Unique key: unique, allows one null. Foreign key: references another table's primary key."},
+        {"index":2,"type":"Technical","question":"Write a function to check if a string is a palindrome.","timeLimit":120,"hint":"Compare characters from both ends or reverse the string. Explain space and time complexity."},
+        {"index":3,"type":"Behavioral","question":"Explain your final year academic project. What was your individual role and contribution?","timeLimit":120,"hint":"Breakdown: Tech stack, core features, challenges faced, and how you solved them."},
+        {"index":4,"type":"Behavioral","question":"Why did you choose Infosys, and how do you align with our core values?","timeLimit":120,"hint":"Mention Infosys' reputation, training programs (Mysore campus), and innovation values."},
+        {"index":5,"type":"Situational","question":"If a client complains about a bug in your code, what is your immediate plan of action?","timeLimit":120,"hint":"Replicate the bug, assess impact, communicate timeline, deploy hotfix, and write test cases."},
+        {"index":6,"type":"Company-Specific","question":"What do you know about Infosys Springboard and their digital operating models?","timeLimit":120,"hint":"Mention digital transformation solutions and their learning platform."},
+        {"index":7,"type":"HR","question":"Do you have any issues with night shifts or working hybrid from different branch offices?","timeLimit":120,"hint":"Confirm your availability and flexible mindset."}
+      ];
+    } else if (compLower.includes('google')) {
+      compQuestions = [
+        {"index":0,"type":"Technical","question":"Explain how you would design a global, rate-limiting system for an API.","timeLimit":180,"hint":"Discuss Token Bucket or Leaky Bucket algorithms, Redis for storage, distributed concurrency, and fallback response codes."},
+        {"index":1,"type":"Technical","question":"Given an unsorted array, find the length of the longest consecutive elements sequence.","timeLimit":180,"hint":"Use a HashSet. Iterate once to find bounds, achieving O(n) runtime complexity."},
+        {"index":2,"type":"Technical","question":"Explain garbage collection algorithms in JavaScript (V8 engine) and memory leak prevention.","timeLimit":120,"hint":"Discuss Mark-and-Sweep, Generational layout, closures, detached DOM trees, and global reference leakage."},
+        {"index":3,"type":"Behavioral","question":"Tell me about a time when you took a calculated technical risk. What was the outcome?","timeLimit":120,"hint":"Provide a structured STAR story. Focus on metrics, risk assessment, mitigations, and learnings."},
+        {"index":4,"type":"Behavioral","question":"Describe a situation where you had to coordinate with an external team to solve a blocking bug.","timeLimit":120,"hint":"Focus on collaboration, active listening, clear alignment, and conflict resolution."},
+        {"index":5,"type":"Situational","question":"If we need to launch a critical security patch that degrades latency by 15%, how would you decide whether to roll it out?","timeLimit":180,"hint":"Discuss trade-offs, security risk compliance vs. SLA violation, staging verification, and incremental rollouts."},
+        {"index":6,"type":"Company-Specific","question":"How do you practice Googleyness, and what interests you about our engineering scale?","timeLimit":120,"hint":"Googleyness involves doing the right thing, helping teammates, active feedback, and passion for technology scale."},
+        {"index":7,"type":"HR","question":"What are your salary expectations and availability for interviews?","timeLimit":120,"hint":"Speak professionally about your expectations matching the market standard and your direct availability."}
+      ];
+    } else if (compLower.includes('microsoft')) {
+      compQuestions = [
+        {"index":0,"type":"Technical","question":"What is the difference between a process and a thread? Explain how context switching works.","timeLimit":120,"hint":"Process: independent execution space with memory. Thread: lightweight unit sharing process memory. Context switching saves register states."},
+        {"index":1,"type":"Technical","question":"How would you design a URL shortener like Bitly? Explain database choice and scale calculations.","timeLimit":180,"hint":"Discuss Base62 encoding, hash tables, NoSQL key-value store, cache layering, and partition strategy."},
+        {"index":2,"type":"Technical","question":"Explain how HashMaps handle key collision under the hood in Java or Javascript.","timeLimit":120,"hint":"Mention buckets, linked lists, red-black tree conversion (Java 8+), and hashcode/equals comparison."},
+        {"index":3,"type":"Behavioral","question":"Describe a project you built where you had to learn a completely new framework on a tight deadline.","timeLimit":120,"hint":"Outline your learning strategy: documentation, quick-start templates, incremental integration, testing."},
+        {"index":4,"type":"Behavioral","question":"Tell me about a time you disagreed with your manager's technical decision. How did you handle it?","timeLimit":120,"hint":"Detail how you presented data-driven trade-offs, listened to their perspective, and aligned with the final decision."},
+        {"index":5,"type":"Situational","question":"Our main production database is experiencing locks causing timeouts. What is your troubleshooting checklist?","timeLimit":120,"hint":"Check CPU/Memory spikes, query analyzer for slow unindexed queries, connection pooling saturation, and run transaction locks queries."},
+        {"index":6,"type":"Company-Specific","question":"How do you view Microsoft's shift towards AI Copilots and open-source contributions?","timeLimit":120,"hint":"Discuss GitHub Copilot integration, Azure AI services, and active engagement with developer communities."},
+        {"index":7,"type":"HR","question":"Why do you want to work at Microsoft, and how does this role fit into your career?","timeLimit":120,"hint":"Talk about engineering culture, impact, scalability, and long-term career growth."}
+      ];
+    } else {
+      compQuestions = [
+        {"index":0,"type":"Technical","question":`Explain the core lifecycle and state management patterns in a modern ${role} application.`,"timeLimit":120,"hint":"Talk about component updates, global state stores (Redux/Context), and optimization methods."},
+        {"index":1,"type":"Technical","question":"Write a function to search for a key in a complex nested JSON structure or object tree.","timeLimit":180,"hint":"Use depth-first search or breadth-first search recursion. Handle cyclic references safely."},
+        {"index":2,"type":"Technical","question":"Explain the differences between SQL and NoSQL databases. When would you choose one over the other?","timeLimit":120,"hint":"SQL: structured, ACID compliance, relations. NoSQL: horizontal scaling, schema flexibility, document/key-value store."},
+        {"index":3,"type":"Behavioral","question":"Describe the most complex software system or feature you have ever built. What was the biggest challenge?","timeLimit":120,"hint":"Provide architecture details, database schemas, performance bottlenecks, and clear resolution actions."},
+        {"index":4,"type":"Behavioral","question":"How do you handle tasks with shifting requirements or vague specifications?","timeLimit":120,"hint":"Discuss asking clarifying questions, wireframing, building incremental MVPs, and rapid feedback loops."},
+        {"index":5,"type":"Situational","question":"If your local server works perfectly, but the deployment fails due to CORS errors, how do you resolve it?","timeLimit":120,"hint":"Explain what CORS is, how the browser blocks headers, and how to configure Allowed Origins on the backend server or API Gateway."},
+        {"index":6,"type":"Company-Specific","question":`How do you plan to leverage your specific technical skills to add value to ${company}?`,"timeLimit":120,"hint":`Connect your experience in modern frameworks directly to ${company}'s domain and product requirements.`},
+        {"index":7,"type":"HR","question":"Where do you see yourself in the next 3 years, and what drives you as a developer?","timeLimit":120,"hint":"Express interest in technical growth, architecture/leadership roles, and continuous learning."}
+      ];
+    }
+
     return {
       "sessionTitle": `Mock Interview: ${role} at ${company}`,
-      "totalQuestions": 5,
-      "estimatedTime": "15-20 minutes",
-      "questions": [
-        {"index":0,"type":"Technical","question":"Explain the virtual DOM in React and how reconciliation works.","timeLimit":120,"hint":"Talk about diffing algorithms and fiber."},
-        {"index":1,"type":"Technical","question":"How do you handle asynchronous operations in Node.js, and what is the event loop?","timeLimit":180,"hint":"Mention call stack, event queue, microtask queue, and callback execution."},
-        {"index":2,"type":"Technical","question":"What are some ways to optimize a slow React application?","timeLimit":120,"hint":"Mention memoization (useMemo, useCallback), lazy loading, and rendering optimization."},
-        {"index":3,"type":"Behavioral","question":"Describe a challenging technical problem you faced in a project and how you resolved it.","timeLimit":120,"hint":"Use the STAR method: Situation, Task, Action, Result."},
-        {"index":4,"type":"Behavioral","question":"How do you handle conflicting opinions in a team project?","timeLimit":120,"hint":"Talk about active listening, compromise, and data-driven decisions."}
-      ]
+      "totalQuestions": compQuestions.length,
+      "estimatedTime": "20-25 minutes",
+      "questions": compQuestions
     };
   }
 
@@ -306,7 +395,13 @@ function getFallbackMock(promptText) {
       "improvements": ["Could mention specific project examples", "Keep responses slightly more concise"],
       "sampleAnswer": "To optimize React performance, you should identify unnecessary re-renders. Use React.memo for component memoization, useMemo to cache expensive computations, and useCallback to preserve function references across renders.",
       "keyMissed": "Code splitting and lazy loading techniques.",
-      "confidence": "High"
+      "confidence": "High",
+      "deliveryAnalytics": {
+        "speakingSpeed": "140 WPM (Optimal)",
+        "fillerCount": 1,
+        "fillersUsed": ["like"],
+        "communicationTone": "Confident & Technical"
+      }
     };
   }
 
@@ -388,7 +483,111 @@ function getFallbackMock(promptText) {
     };
   }
 
-  // Default Fallback: Job Listings
+  // 13. Job Readiness Score Fallback
+  if (p.includes('readiness-score') || p.includes('readiness score') || p.includes('overallscore') || p.includes('has tailored resume')) {
+    return {
+      "overallScore": 85,
+      "grade": "A",
+      "verdict": "Almost Ready",
+      "breakdown": [
+        { "item": "Resume", "score": 18, "maxScore": 20, "status": "done", "tip": "Highlight typescript projects." },
+        { "item": "Cover Letter", "score": 0, "maxScore": 20, "status": "missing", "tip": "Generate a cover letter for this job." },
+        { "item": "Company Research", "score": 20, "maxScore": 20, "status": "done", "tip": "Ready." },
+        { "item": "Portfolio/GitHub", "score": 18, "maxScore": 20, "status": "done", "tip": "Add live deployment links." },
+        { "item": "Network/Referral", "score": 15, "maxScore": 20, "status": "weak", "tip": "Reach out to technical recruiter on LinkedIn." }
+      ],
+      "topAction": "Generate and attach a tailored cover letter.",
+      "encouragement": "You have a solid background. A few minor tweaks will make you a prime candidate!"
+    };
+  }
+
+  // 14. Salary Estimator Fallback
+  if (p.includes('salary-estimate') || p.includes('salary estimate') || p.includes('minsalary') || p.includes('averagesalary')) {
+    return {
+      "minSalary": "4.5 LPA",
+      "maxSalary": "8 LPA",
+      "averageSalary": "6 LPA",
+      "companyTier": "Tier 2",
+      "negotiationTip": "Highlight your hands-on experience in MERN stack architectures to push towards the upper limit.",
+      "topPayingCompanies": ["TCS Digital", "Cognizant GenC Pro", "LTIMindtree"],
+      "salaryFactors": [
+        { "factor": "React & Frontend Optimizations", "impact": "+1.2 LPA" },
+        { "factor": "Node.js REST Backend Development", "impact": "+1.5 LPA" }
+      ],
+      "disclaimer": "These are estimates based on 2024-25 Indian market data. Actual offers may vary."
+    };
+  }
+
+  if (p.includes('recreate-resume-xyz') || p.includes('recreate and rewrite') || p.includes('optimizedresume')) {
+    const targetRoleMatch = promptText.match(/TARGET ROLE:\s*([^\n\r]+)/i);
+    const targetRole = targetRoleMatch ? targetRoleMatch[1].trim() : 'Software Developer';
+
+    const skillsMatch = promptText.match(/EMPHASIZED KEYWORDS\/SKILLS:\s*([^\n\r]+)/i);
+    const userSkills = skillsMatch ? skillsMatch[1].trim() : 'JavaScript, React, Node.js, HTML, CSS';
+
+    const metricsMatch = promptText.match(/USER INCLUDED METRICS\/HIGHLIGHTS:\s*([^\n\r]+)/i);
+    const userMetrics = metricsMatch && !metricsMatch[1].toLowerCase().includes('none specified') 
+      ? metricsMatch[1].trim() 
+      : 'improved loading speed by 35% and query execution locks by 40%';
+
+    const firstSkill = userSkills.split(',')[0]?.trim() || 'React';
+    const secondSkill = userSkills.split(',')[1]?.trim() || 'Node.js';
+
+    return `${extractedName.toUpperCase()}
+${extractedEmail} | ${extractedPhone} | GitHub: ${extractedGithub} | LinkedIn: ${extractedLinkedin}
+
+PROFESSIONAL SUMMARY
+Highly skilled ${targetRole} with extensive experience designing and deploying high-impact architectures. Specialized in modern development frameworks and emphasizing: ${userSkills}. Proven capacity to optimize performance metrics, write clean maintainable systems, and achieve key objectives including: ${userMetrics}.
+
+TECHNICAL SKILLS
+- Core Technologies: ${userSkills}
+- Industry Frameworks: React, Next.js, Redux Toolkit, Node.js, Express.js
+- Tools & Version Control: Git, GitHub, VS Code, Postman, Vercel
+
+PROFESSIONAL EXPERIENCE
+Senior ${targetRole} | Tech Solutions Inc.
+June 2025 - Present | Bangalore, India
+- Optimized application performance by 35% using ${firstSkill} state caching, component virtualization, and bundle lazy loading.
+- Engineered high-throughput backend features for target role of ${targetRole}, accomplishing ${userMetrics} by implementing robust asynchronous event loops.
+- Refactored core database schemas and queries, reducing data transaction read/write locks by 40% using advanced index strategies.
+- Spearheaded team migration to type-safe code architectures using ${secondSkill}, preventing approximately 15% of runtime data exceptions.
+
+ACADEMIC PROJECTS
+Enterprise Application Suite
+- Developed a high-impact responsive platform integrating ${userSkills.split(',').slice(0, 3).join(', ')}, serving 200+ active user tracks.
+- Implemented client-side local persistence, reducing API roundtrip latency by 45% and providing seamless offline-ready UX.
+
+EDUCATION
+Bachelor of Science in Information Technology | Mumbai University
+Graduated: 2025 | Mumbai, India`;
+  }
+
+  if (p.includes('optimize-xyz') || p.includes('xyz formula') || p.includes('accomplished') || p.includes('measured by')) {
+    let action = "Optimized";
+    let metric = "25% performance improvement";
+    let tech = "React hooks and database caching";
+    
+    if (p.includes('react') || p.includes('frontend') || p.includes('css') || p.includes('ui') || p.includes('view') || p.includes('components')) {
+      action = "Redesigned and optimized client-side state engines";
+      metric = "reducing rendering latency by 35% and improving page load speed by 1.2s";
+      tech = "React.js memoization, lazy loading, and Redux state stores";
+    } else if (p.includes('backend') || p.includes('node') || p.includes('api') || p.includes('server') || p.includes('express')) {
+      action = "Architected high-throughput Node.js microservices";
+      metric = "handling 500+ concurrent requests and reducing API response latency by 30%";
+      tech = "Express.js clustering, MongoDB database index optimization, and Redis caching";
+    } else if (p.includes('database') || p.includes('mongo') || p.includes('sql') || p.includes('query')) {
+      action = "Refactored schema design and optimized query indexing";
+      metric = "reducing database read/write locks by 40% and query execution time by 150ms";
+      tech = "MongoDB aggregation pipelines and query indexing strategies";
+    } else {
+      action = "Engineered and deployed scalable full-stack features";
+      metric = "resulting in a 20% increase in user engagement and 15% reduction in page load latency";
+      tech = "modern Javascript frameworks, RESTful API integrations, and CI/CD pipelines";
+    }
+    
+    return `• ${action}, resulting in a ${metric}, by implementing ${tech}.`;
+  }
+
   return {
     "jobs": [
       {

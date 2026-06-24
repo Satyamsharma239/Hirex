@@ -385,14 +385,32 @@
     .mob-menu-btn { display: flex !important; }
   }
 
+  #ats-resume-print-area {
+    display: none;
+  }
   /* ── Print / PDF Export ───────────────────────────────────── */
   @media print {
-    body { background: white !important; color: black !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    #sidebar, header, .btn, .mob-menu-btn { display: none !important; }
-    .page-enter { padding: 0 !important; margin: 0 !important; animation: none !important; }
-    .card-static { border: 1px solid #e2e8f0 !important; background: white !important; color: black !important; box-shadow: none !important; break-inside: avoid; }
-    h1, h2, h3, .gradient-text, .text-1, .text-2, .text-3 { color: black !important; -webkit-text-fill-color: black !important; }
-    /* Revert colors for text inside cards */
-    * { text-shadow: none !important; box-shadow: none !important; }
+    @page {
+      size: auto;
+      margin: 0mm;
+    }
+    body * {
+      visibility: hidden;
+    }
+    #ats-resume-print-area, #ats-resume-print-area * {
+      visibility: visible;
+      display: block !important;
+    }
+    #ats-resume-print-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      margin: 0 !important;
+      padding: 20mm 15mm !important;
+      background: white !important;
+      color: black !important;
+      box-sizing: border-box;
+    }
   }
 }

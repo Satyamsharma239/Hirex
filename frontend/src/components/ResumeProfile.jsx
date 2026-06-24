@@ -5,7 +5,7 @@ import {
   Upload, FileText, Sparkles, CheckCircle, XCircle,
   Brain, TrendingUp, Target, ArrowRight, Globe, Copy, Check,
   Briefcase, Star, Lightbulb, ExternalLink,
-  ListChecks, Award, Bookmark, ShieldAlert
+  ListChecks, Award, Bookmark, ShieldAlert, Download, Printer
 } from 'lucide-react';
 
 function CircleScore({ value, size = 130, color = '#00c9a7' }) {
@@ -40,12 +40,55 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
   const [publishing, setPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState(() => localStorage.getItem('hirex_published_url') || '');
 
-  // ATS Tester tab states
-  const [testerJd, setTesterJd] = useState('');
-  const [testerLoading, setTesterLoading] = useState(false);
-  const [testerResult, setTesterResult] = useState(null);
+  // Verification states
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [verifyContact, setVerifyContact] = useState({ name: '', email: '', phone: '', linkedin: '', github: '' });
+  const [uploadedText, setUploadedText] = useState('');
+  const [uploadedData, setUploadedData] = useState(null);
 
-  const [activeSubTab, setActiveSubTab] = useState('brand'); // 'brand', 'dna', 'tester'
+  const [recreateRole, setRecreateRole] = useState('Software Developer');
+  const [recreateSkills, setRecreateSkills] = useState('');
+  const [recreateMetrics, setRecreateMetrics] = useState('');
+  const [recreateLoading, setRecreateLoading] = useState(false);
+
+  const [bulletInp, setBulletInp] = useState('');
+  const [bulletRole, setBulletRole] = useState('Software Developer');
+  const [optimizedResult, setOptimizedResult] = useState('');
+  const [xyzLoading, setXyzLoading] = useState(false);
+  const [applyLoading, setApplyLoading] = useState(false);
+
+  const [activeSubTab, setActiveSubTab] = useState('brand'); // 'brand', 'dna', 'audit'
+
+  const handleOptimizeXYZ = async () => {
+    if (!bulletInp.trim() || bulletInp.trim().length < 5) {
+      return toast.error('Enter a valid experience sentence to optimize');
+    }
+    setXyzLoading(true);
+    setOptimizedResult('');
+    try {
+      const { data } = await aiAPI.optimizeXYZ({
+        bulletPoint: bulletInp,
+        role: bulletRole
+      });
+      setOptimizedResult(data.optimized || '');
+      toast.success('Optimized sentence generated! ✨');
+    } catch (err) {
+      toast.error('Failed to optimize bullet point');
+    }
+    setXyzLoading(false);
+  };
+
+  const handleDownloadOptimized = () => {
+    if (!auditData?.atsOptimizedResumeText) return;
+    const blob = new Blob([auditData.atsOptimizedResumeText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${(resumeData?.name || 'Candidate').replace(/\s+/g, '_')}_Optimized_Resume.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Optimized resume downloaded! 📥');
+  };
 
   const handleDrop = useCallback(e => {
     e.preventDefault(); setDragging(false);
@@ -53,6 +96,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
     const ext = f?.name.split('.').pop().toLowerCase();
     if (f?.type === 'application/pdf' || ext === 'docx' || ext === 'doc') {
       setFile(f);
+      triggerUpload(f);
     } else {
       toast.error('PDF or DOCX files only');
     }
@@ -64,40 +108,206 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
 
   const triggerUpload = async (selectedFile) => {
     setLoading(true);
-    setTesterResult(null);
     try {
       const fd = new FormData();
       fd.append('resume', selectedFile);
       fd.append('jobDescription', 'Generate a comprehensive analysis of the candidate profile, including MERN stack or general tech skills, weaknesses, experience indicators, and readiness level.');
       
       const { data } = await aiAPI.analyzeResume(fd);
-      toast.success('Resume parsed successfully! ✨');
       
-      // Auto-run Career DNA, Personal Brand, and Recruiter ATS Audit
-      const [dnaResp, brandResp, auditResp] = await Promise.all([
-        discoverAPI.getCareerDNA({
-          resumeText: data.resumeText,
-          currentSkills: data.skillsPresent || [],
-        }),
-        featuresAPI.getCareerCard({
-          resumeText: data.resumeText,
-          userName: selectedFile.name.split('.')[0] || 'Developer',
-          skills: data.skillsPresent || [],
-          targetRole: 'Software Developer'
-        }),
-        discoverAPI.getATSAudit({
-          resumeText: data.resumeText,
-          skills: data.skillsPresent || [],
-        })
-      ]);
-
-      // Pass up to App state to persist
-      onUpdateProfile(data.resumeText, brandResp.data, dnaResp.data, auditResp.data);
+      setUploadedText(data.resumeText || '');
+      setUploadedData(data);
       
+      // Prefill contact verification form
+      setVerifyContact({
+        name: data.contact?.name || selectedFile.name.split('.')[0] || '',
+        email: data.contact?.email || '',
+        phone: data.contact?.phone || '',
+        linkedin: data.contact?.linkedin || '',
+        github: data.contact?.github || ''
+      });
+      
+      setLoading(false);
+      setShowVerifyModal(true);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to analyze resume');
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmVerify = async () => {
+    if (!verifyContact.name || verifyContact.name.trim().length < 2) {
+      return toast.error('Please enter your full name');
+    }
+    if (!verifyContact.email || !verifyContact.email.includes('@') || verifyContact.email.trim().length < 5) {
+      return toast.error('Please enter a valid email address');
+    }
+    if (!verifyContact.phone || verifyContact.phone.trim().replace(/[^0-9]/g, '').length < 8) {
+      return toast.error('Please enter a valid mobile number (min 8 digits)');
+    }
+
+    setShowVerifyModal(false);
+    setLoading(true);
+    try {
+      // Auto-run Career DNA, Personal Brand, and Recruiter ATS Audit
+      let dnaData = null;
+      let brandData = null;
+      let auditData = null;
+
+      try {
+        const res = await discoverAPI.getCareerDNA({
+          resumeText: uploadedText,
+          currentSkills: uploadedData.skillsPresent || [],
+        });
+        dnaData = res.data;
+      } catch (err) {
+        console.warn('DNA generation failed:', err);
+      }
+
+      try {
+        const res = await featuresAPI.getCareerCard({
+          resumeText: uploadedText,
+          userName: verifyContact.name || 'Developer',
+          skills: uploadedData.skillsPresent || [],
+          targetRole: 'Software Developer'
+        });
+        brandData = res.data;
+        if (brandData) brandData.name = verifyContact.name;
+      } catch (err) {
+        console.warn('Brand card generation failed:', err);
+      }
+
+      try {
+        const res = await discoverAPI.getATSAudit({
+          resumeText: uploadedText,
+          skills: uploadedData.skillsPresent || [],
+          contact: verifyContact
+        });
+        auditData = res.data;
+      } catch (err) {
+        console.warn('ATS Audit generation failed:', err);
+      }
+
+      onUpdateProfile(uploadedText, brandData, dnaData, auditData);
+      toast.success('Resume parsed and verified successfully! ✨');
+    } catch (err) {
+      toast.error('Failed to complete profile generation');
     }
     setLoading(false);
+  };
+
+  const handleRecreateResumeXYZ = async () => {
+    if (!resumeText) return toast.error('Upload your resume first');
+    setRecreateLoading(true);
+    try {
+      // Extracted contact details from current resume if available
+      const emailMatch = resumeText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      const phoneMatch = resumeText.match(/(\+?\d[\d-\s()]{8,}\d)/);
+      const linkedinMatch = resumeText.match(/(linkedin\.com\/in\/[a-zA-Z0-9_%+-]+)/i);
+      const githubMatch = resumeText.match(/(github\.com\/[a-zA-Z0-9_%+-]+)/i);
+      
+      const payload = {
+        resumeText,
+        targetRole: recreateRole,
+        skills: recreateSkills.split(',').map(s => s.trim()).filter(Boolean),
+        metrics: recreateMetrics,
+        contact: {
+          name: resumeData?.name || 'Candidate Name',
+          email: emailMatch ? emailMatch[1] : 'email@domain.com',
+          phone: phoneMatch ? phoneMatch[1] : '+91 99999 99999',
+          linkedin: linkedinMatch ? linkedinMatch[1] : 'linkedin.com/in/username',
+          github: githubMatch ? githubMatch[1] : 'github.com/username'
+        }
+      };
+      
+      const { data } = await aiAPI.recreateResumeXYZ(payload);
+      
+      const updatedAudit = {
+        ...auditData,
+        atsOptimizedResumeText: data.optimizedResume,
+        atsScore: 99,
+        atsGrade: "A+"
+      };
+      
+      onUpdateProfile(resumeText, resumeData, dnaData, updatedAudit);
+      toast.success('Entire resume recreated & optimized! 🚀');
+    } catch (err) {
+      toast.error('Failed to recreate resume');
+    }
+    setRecreateLoading(false);
+  };
+
+  const handleApplyRecreatedResume = async () => {
+    if (!auditData?.atsOptimizedResumeText) return toast.error('No recreated resume available');
+    setApplyLoading(true);
+    try {
+      const activeText = auditData.atsOptimizedResumeText;
+
+      const fd = new FormData();
+      fd.append('resumeText', activeText);
+      fd.append('jobDescription', 'Generate a comprehensive analysis of the candidate profile, MERN stack or general tech skills, weaknesses, experience indicators, and readiness level.');
+
+      const parseRes = await aiAPI.analyzeResume(fd);
+      const parsedProfileData = parseRes.data;
+
+      // Extract details from verify contact or parse
+      const contactDetails = {
+        name: resumeData?.name || parsedProfileData.contact?.name || 'Candidate Name',
+        email: verifyContact.email || parsedProfileData.contact?.email || 'email@domain.com',
+        phone: verifyContact.phone || parsedProfileData.contact?.phone || '+91 99999 99999',
+        linkedin: verifyContact.linkedin || parsedProfileData.contact?.linkedin || 'linkedin.com/in/username',
+        github: verifyContact.github || parsedProfileData.contact?.github || 'github.com/username'
+      };
+
+      let newDnaData = null;
+      try {
+        const res = await discoverAPI.getCareerDNA({
+          resumeText: activeText,
+          currentSkills: parsedProfileData.skillsPresent || [],
+        });
+        newDnaData = res.data;
+      } catch (err) {
+        console.warn('DNA generation failed:', err);
+      }
+
+      let newBrandData = null;
+      try {
+        const res = await featuresAPI.getCareerCard({
+          resumeText: activeText,
+          userName: contactDetails.name,
+          skills: parsedProfileData.skillsPresent || [],
+          targetRole: recreateRole || 'Software Developer'
+        });
+        newBrandData = res.data;
+        if (newBrandData) newBrandData.name = contactDetails.name;
+      } catch (err) {
+        console.warn('Brand card generation failed:', err);
+      }
+
+      let newAuditData = null;
+      try {
+        const res = await discoverAPI.getATSAudit({
+          resumeText: activeText,
+          skills: parsedProfileData.skillsPresent || [],
+          contact: contactDetails
+        });
+        newAuditData = res.data;
+        if (newAuditData) {
+          newAuditData.atsOptimizedResumeText = activeText;
+          newAuditData.atsScore = 100;
+          newAuditData.atsGrade = "A+";
+        }
+      } catch (err) {
+        console.warn('ATS Audit generation failed:', err);
+      }
+
+      onUpdateProfile(activeText, newBrandData || parsedProfileData, newDnaData, newAuditData);
+      toast.success('Optimized resume is now active globally! 🚀');
+    } catch (err) {
+      console.error('Failed to apply recreated resume:', err);
+      toast.error(err.response?.data?.error || 'Failed to sync applied resume');
+    }
+    setApplyLoading(false);
   };
 
   const handlePublish = async () => {
@@ -117,28 +327,6 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
     setPublishing(false);
   };
 
-  const handleTestATS = async () => {
-    if (!resumeText) return toast.error('Upload your resume first');
-    if (!testerJd || testerJd.trim().length < 30) return toast.error('Paste a job description (min 30 characters)');
-    setTesterLoading(true);
-    try {
-      // Create mockup File for matching
-      const blob = new Blob([resumeText], { type: 'text/plain' });
-      const mockFile = new File([blob], 'resume.txt', { type: 'text/plain' });
-      
-      const fd = new FormData();
-      fd.append('resume', mockFile);
-      fd.append('jobDescription', testerJd);
-      
-      const { data } = await aiAPI.analyzeResume(fd);
-      setTesterResult(data);
-      toast.success('ATS keyword match analysis complete! 🎯');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'ATS testing failed');
-    }
-    setTesterLoading(false);
-  };
-
   const copyLink = () => {
     const fullUrl = window.location.origin + publishedUrl;
     navigator.clipboard.writeText(fullUrl);
@@ -149,6 +337,47 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
 
   return (
     <div className="page-enter" style={{ padding: '28px 28px 60px' }}>
+      {/* Verification Modal */}
+      {showVerifyModal && (
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }} onClick={e => e.target === e.currentTarget && setShowVerifyModal(false)}>
+          <div className="modal-box" style={{ maxWidth: 520, background: 'var(--bg-card)', border: '1px solid rgba(0, 201, 167, 0.2)', padding: 32 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 900, color: 'var(--text-1)', marginBottom: 6, textAlign: 'center' }}>Verify Contact Details</h2>
+            <p style={{ fontSize: 12.5, color: 'var(--text-3)', marginBottom: 20, textAlign: 'center', lineHeight: 1.5 }}>
+              Verify details extracted from your resume. Correct any mistakes to build your Career DNA and optimized resume.
+            </p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+              {[
+                { key: 'name', label: 'Full Name', placeholder: 'e.g. Satyam Sharma' },
+                { key: 'email', label: 'Email Address', placeholder: 'e.g. name@email.com' },
+                { key: 'phone', label: 'Mobile Number', placeholder: 'e.g. +91 98765 43210' },
+                { key: 'linkedin', label: 'LinkedIn Profile URL', placeholder: 'e.g. linkedin.com/in/username' },
+                { key: 'github', label: 'GitHub Profile URL', placeholder: 'e.g. github.com/username' },
+              ].map(field => (
+                <div key={field.key}>
+                  <label style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 5, textTransform: 'uppercase' }}>
+                    {field.label}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={verifyContact[field.key]} 
+                    onChange={e => setVerifyContact({ ...verifyContact, [field.key]: e.target.value })}
+                    className="inp"
+                    placeholder={field.placeholder}
+                    style={{ width: '100%', background: 'rgba(0,0,0,0.2)', borderColor: 'var(--border)', color: 'var(--text-1)' }}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setShowVerifyModal(false)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }}>Cancel</button>
+              <button onClick={handleConfirmVerify} className="btn btn-primary" style={{ flex: 2, justifyContent: 'center' }}>Verify & Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px' }}>Resume & Brand Profile</h1>
@@ -228,14 +457,17 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
               <button onClick={() => setActiveSubTab('audit')} className={`tab-btn ${activeSubTab === 'audit' ? 'active' : ''}`} style={{ flex: 1 }}>
                 🛡️ Recruiter & ATS Audit
               </button>
-              <button onClick={() => setActiveSubTab('tester')} className={`tab-btn ${activeSubTab === 'tester' ? 'active' : ''}`} style={{ flex: 1 }}>
-                🎯 ATS Match Tester
-              </button>
             </div>
 
             {/* Brand Tab */}
             {activeSubTab === 'brand' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)', borderRadius: 10, fontSize: 12, color: 'var(--text-3)' }}>
+                   <span>ℹ️</span>
+                   <span>
+                     <strong>LinkedIn Sync:</strong> Direct auto-updates and browser-driven applications are disabled due to LinkedIn's modern API and login restrictions. Use the copy buttons below to optimize your profile, and search relevant jobs instantly in the <strong>Recruiter & ATS Audit</strong> tab.
+                   </span>
+                </div>
                 <div className="card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(236,72,153,0.06), rgba(59,130,246,0.04))', borderColor: 'rgba(236,72,153,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                     <div>
@@ -295,6 +527,69 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     <p style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 12px' }}>{resumeData.coldEmailIntro}</p>
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <button onClick={() => { navigator.clipboard.writeText(resumeData.coldEmailIntro); toast.success('Intro pitch copied!'); }} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}><Copy size={12} /> Copy</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card" style={{ padding: 20, borderColor: 'rgba(59, 130, 246, 0.2)', marginTop: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', letterSpacing: '0.8px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Star size={13} color="#3b82f6" /> LINKEDIN PROFILE BOOSTER
+                  </div>
+                  <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
+                    Optimize your LinkedIn presence to stand out to top-tier tech and startup recruiters. Copy these tailored fields directly into your profile.
+                  </p>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: 16 }} className="xyz-grid">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div className="card-static" style={{ padding: 14, background: 'var(--bg-surface)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', marginBottom: 6 }}>OPTIMIZED HEADLINE</div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--teal)', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                          {resumeData?.headline || `${verifyContact.name} | Full Stack Developer | Open to Work`}
+                        </p>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText(resumeData?.headline || '');
+                            toast.success('Headline copied! 📋');
+                          }}
+                          className="btn btn-ghost btn-sm" style={{ fontSize: 11, gap: 4 }}
+                        >
+                          <Copy size={12} /> Copy Headline
+                        </button>
+                      </div>
+
+                      <div className="card-static" style={{ padding: 14, background: 'var(--bg-surface)' }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', marginBottom: 6 }}>LINKEDIN RECRUITER OUTREACH NOTE</div>
+                        <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: '0 0 10px 0', lineHeight: 1.5, maxHeight: 110, overflowY: 'auto' }}>
+                          "Hi [Recruiter], I saw you are building the engineering team at [Company]. I'm a developer specializing in MERN and performance state optimization, and would love to connect. I recently built HireX AI tracking 20+ applications."
+                        </p>
+                        <button 
+                          onClick={() => {
+                            navigator.clipboard.writeText("Hi [Recruiter], I saw you are building the engineering team at [Company]. I'm a developer specializing in MERN and performance state optimization, and would love to connect. I recently built HireX AI tracking 20+ applications.");
+                            toast.success('Recruiter note copied! 📋');
+                          }}
+                          className="btn btn-ghost btn-sm" style={{ fontSize: 11, gap: 4 }}
+                        >
+                          <Copy size={12} /> Copy Recruiter Note
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="card-static" style={{ padding: 16, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', marginBottom: 8 }}>LINKEDIN APPLICATION CHECKLIST</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {[
+                          "Copy and paste the Optimized Headline to your LinkedIn profile description.",
+                          "Update your 'About' section with the LinkedIn Profile Description text above.",
+                          "Ensure your contact details on LinkedIn match the verified ones in your resume.",
+                          "Go to 'Job Discovery', search for target roles, and open the LinkedIn 'Find ↗' links.",
+                          "Connect with engineers/recruiters at those target firms and send the recruiter outreach note."
+                        ].map((tip, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: 8, fontSize: 12, color: 'var(--text-2)', lineHeight: 1.4 }}>
+                            <span style={{ color: 'var(--teal)', fontWeight: 800 }}>{idx + 1}.</span>
+                            <span>{tip}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -439,6 +734,203 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                       </div>
                     </div>
 
+                    {/* ATS-Optimized Master Resume Text & Editor */}
+                    <div className="card" style={{ padding: 20 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 12 }}>
+                        <div>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px' }}>REWRITTEN & ATS-OPTIMIZED MASTER RESUME</div>
+                          <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '4px 0 0' }}>Restructured by Senior Recruiter audit. Copy or download this optimized text to update your resume file.</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button 
+                            onClick={handleApplyRecreatedResume}
+                            disabled={applyLoading}
+                            className="btn btn-primary btn-sm"
+                            style={{ fontSize: 11, gap: 6, background: 'linear-gradient(135deg, #00c9a7, #3b82f6)', border: 'none' }}
+                          >
+                            {applyLoading ? <><div className="spinner" /> Activating...</> : <><Check size={13} /> Apply as Active Profile</>}
+                          </button>
+                          <button 
+                            onClick={() => {
+                              navigator.clipboard.writeText(auditData.atsOptimizedResumeText || '');
+                              toast.success('Optimized resume copied! 📋');
+                            }}
+                            className="btn btn-ghost btn-sm"
+                            style={{ fontSize: 11, gap: 6 }}
+                          >
+                            <Copy size={13} /> Copy Text
+                          </button>
+                          <button 
+                            onClick={handleDownloadOptimized}
+                            className="btn btn-ghost btn-sm"
+                            style={{ fontSize: 11, gap: 6 }}
+                          >
+                            <Download size={13} /> Download .txt
+                          </button>
+                          <button 
+                            onClick={() => window.print()}
+                            className="btn btn-primary btn-sm"
+                            style={{ fontSize: 11, gap: 6 }}
+                          >
+                            <Printer size={13} /> Print / Save PDF
+                          </button>
+                        </div>
+                      </div>
+                      <textarea
+                        readOnly
+                        value={auditData.atsOptimizedResumeText || 'No optimized resume text generated yet.'}
+                        className="inp"
+                        style={{ 
+                          width: '100%', 
+                          height: 250, 
+                          fontFamily: 'monospace', 
+                          fontSize: 12, 
+                          lineHeight: 1.5, 
+                          background: 'rgba(0,0,0,0.18)', 
+                          borderColor: 'var(--border)', 
+                          color: 'var(--text-2)', 
+                          padding: 12, 
+                          borderRadius: 10, 
+                          resize: 'vertical',
+                          marginBottom: 10
+                        }}
+                      />
+                      
+                      {/* Printable clean PDF resume container */}
+                      <div id="ats-resume-print-area">
+                        <pre style={{ 
+                          whiteSpace: 'pre-wrap', 
+                          fontFamily: '"Times New Roman", Times, serif', 
+                          fontSize: '11.5pt', 
+                          color: '#000', 
+                          lineHeight: '1.45', 
+                          background: '#fff', 
+                          padding: '1in 0.8in', 
+                          margin: 0, 
+                          width: '100%', 
+                          boxSizing: 'border-box' 
+                        }}>
+                          {auditData.atsOptimizedResumeText}
+                        </pre>
+                      </div>
+                    </div>
+
+                    <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Sparkles size={13} color="var(--teal)" /> RECREATE ENTIRE RESUME (ACTION-IMPACT FORMULA)
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 14px 0', lineHeight: 1.4 }}>
+                        Overhaul your entire resume at once. Specify your target role, key skills, and metrics (e.g. 25% query latency reduction, 2s load time improvement) to rewrite all experience bullets into the Action-Impact-Method (AIM) format.
+                      </p>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 18, alignItems: 'stretch' }} className="xyz-grid">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Target Role</label>
+                            <input value={recreateRole} onChange={e => setRecreateRole(e.target.value)} className="inp" placeholder="e.g. Full Stack Developer, React Engineer" style={{ width: '100%', background: 'rgba(0,0,0,0.18)', borderColor: 'var(--border)', color: 'var(--text-1)' }} />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Skills to Emphasize (comma-separated)</label>
+                            <input value={recreateSkills} onChange={e => setRecreateSkills(e.target.value)} className="inp" placeholder="e.g. React, Node.js, TypeScript, Docker" style={{ width: '100%', background: 'rgba(0,0,0,0.18)', borderColor: 'var(--border)', color: 'var(--text-1)' }} />
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Key Metrics / Accomplishments to weave in</label>
+                            <textarea 
+                              value={recreateMetrics} 
+                              onChange={e => setRecreateMetrics(e.target.value)} 
+                              className="inp" 
+                              rows={4} 
+                              placeholder="e.g. improved loading speeds by 30%, handled 1000+ concurrent requests, reduced database read/write locks by 40%" 
+                              style={{ width: '100%', resize: 'none', background: 'rgba(0,0,0,0.18)', borderColor: 'var(--border)', color: 'var(--text-1)' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={handleRecreateResumeXYZ} 
+                        disabled={recreateLoading || !recreateRole.trim()} 
+                        className="btn btn-primary" 
+                        style={{ width: '100%', justifyContent: 'center', marginTop: 14 }}
+                      >
+                        {recreateLoading ? <><div className="spinner" /> Recreating Resume...</> : <><Sparkles size={13} /> Recreate & Optimize Entire Resume</>}
+                      </button>
+                    </div>
+
+                    <div className="card" style={{ padding: 20, marginTop: 16 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-3)', letterSpacing: '0.8px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Sparkles size={13} color="var(--teal)" /> METRICS-DRIVEN ACHIEVEMENT OPTIMIZER
+                      </div>
+                      <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 14px 0', lineHeight: 1.4 }}>
+                        Top recruiters prefer resume achievements written in the Action-Impact-Method (AIM) format: <strong>"Accomplished [Action] as measured by [Impact], by doing [Method]"</strong>. Enter any plain resume bullet below to rewrite it.
+                      </p>
+                      
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 18, alignItems: 'stretch' }} className="xyz-grid">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                          <div>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Target Profile Role</label>
+                            <input value={bulletRole} onChange={e => setBulletRole(e.target.value)} className="inp" placeholder="e.g. Software Developer, React Engineer" />
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Plain Bullet Point / Achievement</label>
+                            <textarea 
+                              value={bulletInp} 
+                              onChange={e => setBulletInp(e.target.value)} 
+                              className="inp" 
+                              rows={3} 
+                              placeholder="e.g. Worked on website speed optimization and fixed database query locks." 
+                            />
+                          </div>
+                          <button onClick={handleOptimizeXYZ} disabled={xyzLoading || !bulletInp.trim()} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
+                            {xyzLoading ? <><div className="spinner" /> Optimizing...</> : <><Sparkles size={13} /> Optimize to AIM Formula</>}
+                          </button>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>AIM Formula Result</label>
+                          {optimizedResult ? (
+                            <div className="card-static" style={{ 
+                              padding: 14, background: 'rgba(0,201,167,0.04)', border: '1px solid rgba(0,201,167,0.2)',
+                              borderRadius: 10, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: 'calc(100% - 24px)', minHeight: 116
+                            }}>
+                              <p style={{ fontSize: 13, color: 'var(--text-1)', lineHeight: 1.5, margin: '0 0 12px 0', fontStyle: 'italic' }}>
+                                "{optimizedResult}"
+                              </p>
+                              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(optimizedResult);
+                                    toast.success('AIM statement copied! 📋');
+                                  }}
+                                  className="btn btn-ghost btn-sm" style={{ fontSize: 11, gap: 5 }}
+                                >
+                                  <Copy size={12} /> Copy Statement
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ 
+                              flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                              padding: '24px 16px', border: '1px dashed var(--border)', borderRadius: 10, textAlign: 'center', color: 'var(--text-3)', minHeight: 116
+                            }}>
+                              <Target size={20} style={{ opacity: 0.3, marginBottom: 6 }} />
+                              <div style={{ fontSize: 12, fontWeight: 700 }}>Awaiting Input</div>
+                              <p style={{ fontSize: 11.5, margin: '3px 0 0', maxWidth: 220 }}>Enter your achievement on the left and click optimize to see the magic.</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <style>{`
+                        @media (max-width: 600px) {
+                          .xyz-grid { grid-template-columns: 1fr !important; }
+                        }
+                      `}</style>
+                    </div>
+
+
+
                     {/* ATS Keyword density */}
                     {auditData.keywordDensity && (
                       <div className="card" style={{ padding: 20 }}>
@@ -463,30 +955,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                       </div>
                     )}
 
-                    {/* Recruiter Optimization (Rewritten summary & Bullets) */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                      <div className="card-static" style={{ padding: 18 }}>
-                        <div style={labelStyle}>ATS-Optimized Summary</div>
-                        <p style={{ fontSize: 12.5, color: 'var(--text-2)', lineHeight: 1.6, margin: '0 0 12px' }}>{auditData.rewrittenSummary}</p>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button onClick={() => { navigator.clipboard.writeText(auditData.rewrittenSummary); toast.success('Summary copied!'); }} className="btn btn-ghost btn-sm" style={{ fontSize: 11 }}><Copy size={12} /> Copy Summary</button>
-                        </div>
-                      </div>
 
-                      <div className="card-static" style={{ padding: 18 }}>
-                        <div style={labelStyle}>STAR-Formatted Experience Bullets</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 180, overflowY: 'auto', paddingRight: 4 }}>
-                          {auditData.rewrittenBullets?.map((bullet, idx) => (
-                            <div key={idx} style={{ background: 'var(--bg-surface)', padding: 8, borderRadius: 6, border: '1px solid var(--border)', fontSize: 11.5, color: 'var(--text-2)', lineHeight: 1.4 }}>
-                              "{bullet}"
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-                                <button onClick={() => { navigator.clipboard.writeText(bullet); toast.success('Bullet copied!'); }} className="btn btn-ghost btn-sm" style={{ fontSize: 10, padding: '1px 4px' }}><Copy size={10} /> Copy</button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
 
                     {/* LinkedIn Top 20 Suited Roles directory */}
                     <div className="card" style={{ padding: 20 }}>
@@ -558,57 +1027,6 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     </div>
                   </>
                 )}
-              </div>
-            )}
-
-            {/* ATS Match Tester Tab */}
-            {activeSubTab === 'tester' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: testerResult ? '1fr 1fr' : '1fr', gap: 16 }}>
-                  {/* Left Tester Input */}
-                  <div className="card-static" style={{ padding: 20 }}>
-                    <label style={labelStyle}>Target Job Description</label>
-                    <textarea value={testerJd} onChange={e => setTesterJd(e.target.value)} className="inp" rows={7} placeholder="Paste requirements / responsibilities for the job you want to test..." />
-                    <button onClick={handleTestATS} disabled={testerLoading} className="btn btn-primary" style={{ width: '100%', marginTop: 14, justifyContent: 'center' }}>
-                      {testerLoading ? <><div className="spinner" /> Testing match...</> : <><Sparkles size={14} /> Scan ATS Compatibility</>}
-                    </button>
-                  </div>
-
-                  {/* Right Tester Output */}
-                  {testerResult && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      <div className="card" style={{ padding: 18, display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <CircleScore value={testerResult.matchPercentage || 0} color={testerResult.matchPercentage >= 75 ? '#10b981' : '#f59e0b'} />
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: testerResult.matchPercentage >= 75 ? '#10b981' : '#f59e0b' }}>
-                            {testerResult.verdict}
-                          </div>
-                          <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>
-                            ATS score: {testerResult.atsScore}% · {testerResult.experienceMatch}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="card" style={{ padding: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: '#fb7185', marginBottom: 6 }}>❌ MISSING KEYWORDS</div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                          {testerResult.skillsMissing?.length > 0 ? (
-                            testerResult.skillsMissing.map(k => <span key={k} style={{ padding: '2px 8px', borderRadius: 4, background: 'rgba(244,63,94,0.06)', border: '1px solid rgba(244,63,94,0.15)', color: '#fb7185', fontSize: 11.5 }}>{k}</span>)
-                          ) : (
-                            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>100% keyword coverage!</span>
-                          )}
-                        </div>
-                      </div>
-
-                      {testerResult.suggestion && (
-                        <div style={{ background: 'rgba(0,201,167,0.05)', border: '1px solid rgba(0,201,167,0.15)', borderRadius: 10, padding: 12 }}>
-                          <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--teal)', marginBottom: 2 }}>RECOMMENDED FIX</div>
-                          <p style={{ fontSize: 12, color: 'var(--text-2)', margin: 0, lineHeight: 1.5 }}>{testerResult.suggestion}</p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>

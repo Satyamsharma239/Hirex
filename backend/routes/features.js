@@ -112,24 +112,27 @@ router.post('/interview-sim', async (req, res) => {
     if (!company || !role) return res.status(400).json({ error: 'company and role required' });
 
     if (!userAnswer) {
-      // Generate questions
       const prompt = `Generate a realistic mock interview for "${role}" at "${company}" for an Indian candidate. Today: ${TODAY}.
 Job context: ${jobDescription.slice(0, 300)}
 
-Return JSON:
+CRITICAL: Settle ONLY for real-world questions that are historically known to be asked during actual interview rounds at "${company}" for the specific role of "${role}" (drawing from interview logs on Glassdoor, LeetCode, and GeeksforGeeks). 
+- If "${company}" is a service company like TCS, Infosys, Wipro, Cognizant, or Accenture, include real foundational coding/logic questions, database queries (SQL/NoSQL), OOPs concepts, final-year project explanations, and TR/HR questions standard to their recruitment process.
+- If "${company}" is a top-tier product-based company or startup, include actual data structures & algorithms (DSA) challenges, system design/architecture questions, and deep technical framework questions asked at their panels.
+
+Return JSON matching this structure EXACTLY:
 {
-  "sessionTitle": "<e.g. Mock Interview: ${role} at ${company}>",
+  "sessionTitle": "Mock Interview: ${role} at ${company}",
   "totalQuestions": 8,
-  "estimatedTime": "<e.g. 20-25 minutes>",
+  "estimatedTime": "20-25 minutes",
   "questions": [
-    {"index":0,"type":"Technical","question":"<specific technical question for this role>","timeLimit":120,"hint":"<what a good answer includes>"},
-    {"index":1,"type":"Technical","question":"<coding or system design question>","timeLimit":180,"hint":"<hint>"},
-    {"index":2,"type":"Technical","question":"<framework/tool specific question>","timeLimit":120,"hint":"<hint>"},
-    {"index":3,"type":"Behavioral","question":"<Tell me about a time... question>","timeLimit":120,"hint":"<STAR method tip>"},
-    {"index":4,"type":"Behavioral","question":"<another behavioral question>","timeLimit":120,"hint":"<hint>"},
-    {"index":5,"type":"Situational","question":"<What would you do if... scenario>","timeLimit":120,"hint":"<hint>"},
-    {"index":6,"type":"Company-Specific","question":"<question about ${company}'s domain/product>","timeLimit":90,"hint":"<hint>"},
-    {"index":7,"type":"HR","question":"<salary or availability question>","timeLimit":60,"hint":"<hint>"}
+    {"index":0,"type":"Technical","question":"<specific real technical question for ${role} historically asked at ${company}>","timeLimit":120,"hint":"<what a good answer includes for this question>"},
+    {"index":1,"type":"Technical","question":"<real coding or system design question asked at ${company} for ${role}>","timeLimit":180,"hint":"<hint>"},
+    {"index":2,"type":"Technical","question":"<real technical framework/language question asked at ${company}>","timeLimit":120,"hint":"<hint>"},
+    {"index":3,"type":"Behavioral","question":"<real behavioral question asked at ${company}>","timeLimit":120,"hint":"<STAR method tip>"},
+    {"index":4,"type":"Behavioral","question":"<another real behavioral question asked at ${company}>","timeLimit":120,"hint":"<hint>"},
+    {"index":5,"type":"Situational","question":"<real situational/problem-solving question asked at ${company}>","timeLimit":120,"hint":"<hint>"},
+    {"index":6,"type":"Company-Specific","question":"<real question about ${company}'s products, services, scale or tech stack>","timeLimit":90,"hint":"<hint>"},
+    {"index":7,"type":"HR","question":"<real HR question asked at ${company} (e.g. standard HR questions like company interest or relocation)>","timeLimit":60,"hint":"<hint>"}
   ]
 }`;
       return res.json(await generate({ prompt, temperature: 0.85 }));
@@ -148,7 +151,13 @@ Score this answer and return JSON:
   "improvements": ["<what to improve>","<improvement 2>"],
   "sampleAnswer": "<what a great answer would look like — 3-4 sentences>",
   "keyMissed": "<most important point they missed, or null>",
-  "confidence": "<Low / Medium / High / Very High>"
+  "confidence": "<Low / Medium / High / Very High>",
+  "deliveryAnalytics": {
+    "speakingSpeed": "<estimate candidate WPM based on answer length, e.g., '135 WPM (Optimal)' or '80 WPM (Slow)'>",
+    "fillerCount": <count of typical speech filler words like 'um', 'ah', 'like', 'basically', 'you know' in candidate answer>,
+    "fillersUsed": ["<filler word 1>", "<filler word 2>"],
+    "communicationTone": "<Confident, Technical, Conversational, or Hesitant depending on answer structure>"
+  }
 }`;
 
     res.json(await generate({ prompt, temperature: 0.85 }));

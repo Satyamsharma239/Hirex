@@ -42,12 +42,15 @@ const STAT_CONFIG = [
   { key: 'rejected',   label: 'Rejected',      icon: TrendingUp, color: '#f43f5e', trackKey: null },
 ];
 
-export default function Dashboard({ onNavigate, resumeText, resumeData }) {
+export default function Dashboard({ onNavigate, resumeText, resumeData, onSimulateInterview }) {
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
+
+  const apiHost = window.location.origin.includes('localhost') ? 'http://localhost:5001' : window.location.origin;
+  const bookmarkletHref = `javascript:(function(){const d=document;const data={company:d.querySelector('.topcard__org-name-link, .job-details-jobs-unified-top-card__company-name')?.innerText||'Unknown',role:d.querySelector('.top-card-layout__title, .job-details-jobs-unified-top-card__job-title')?.innerText||d.title,location:d.querySelector('.topcard__flavor--bullet')?.innerText||'',link:window.location.href,description:d.body.innerText.substring(0,200),source:window.location.hostname};fetch('${apiHost}/api/jobs/external',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(res=>{if(res.success)alert('Job saved to HireX Tracker!');else alert('Failed to save job');}).catch(e=>alert('Error saving job'));})();`;
   const [selectedJob, setSelectedJob] = useState(null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -419,8 +422,8 @@ export default function Dashboard({ onNavigate, resumeText, resumeData }) {
             
             <div style={{ display: 'flex', justifyContent: 'center', padding: '30px 0', background: 'var(--bg-root)', borderRadius: 12, border: '1px dashed var(--border-teal)', marginBottom: 20 }}>
               <a 
-                href="javascript:(function(){const d=document;const data={company:d.querySelector('.topcard__org-name-link, .job-details-jobs-unified-top-card__company-name')?.innerText||'Unknown',role:d.querySelector('.top-card-layout__title, .job-details-jobs-unified-top-card__job-title')?.innerText||d.title,location:d.querySelector('.topcard__flavor--bullet')?.innerText||'',link:window.location.href,description:d.body.innerText.substring(0,200),source:window.location.hostname};fetch('http://localhost:5001/api/jobs/external',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(res=>{if(res.success)alert('Job saved to HireX Tracker!');else alert('Failed to save job');}).catch(e=>alert('Error saving job'));})();"
-                onClick={e => e.preventDefault()}
+                href={bookmarkletHref}
+                onClick={e => e.stopPropagation()} // Let drag work, but stop click bubbling if they click it directly in modal
                 style={{ padding: '10px 20px', background: '#8b5cf6', color: '#fff', borderRadius: 20, fontWeight: 700, fontSize: 14, textDecoration: 'none', cursor: 'grab', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 4px 12px rgba(139,92,246,0.3)' }}
               >
                 <Bookmark size={14} /> + Save to HireX
@@ -442,15 +445,15 @@ export default function Dashboard({ onNavigate, resumeText, resumeData }) {
           onUpdate={handleDrawerJobUpdate}
           onDelete={handleDelete}
           onEdit={(j) => { setEditingJob(j); setModalOpen(true); }}
+          onSimulateInterview={onSimulateInterview}
         />
       )}
     </div>
   );
 }
 
-// ── Job Details Slide-in Drawer ──────────────────────────────────────────────
-function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDelete, onEdit }) {
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'copilot'
+function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDelete, onEdit, onSimulateInterview }) {
+  const [activeTab, setActiveTab] = useState('overview');
   const [notes, setNotes] = useState(job.notes || '');
   const [savingNotes, setSavingNotes] = useState(false);
 
@@ -632,10 +635,22 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
         {/* Content Body */}
         <div style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}>
           
-          {/* OVERVIEW TAB */}
           {activeTab === 'overview' && (
             <>
-              {/* Status Picker */}
+              {String(job.status).toLowerCase() === 'interview' && (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', padding: '12px 14px', borderRadius: 10, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Brain size={18} color="#f59e0b" />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>Practice Mock Interview</div>
+                      <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: 0 }}>Prepare for {job.company}'s specific questions.</p>
+                    </div>
+                  </div>
+                  <button onClick={() => { onSimulateInterview && onSimulateInterview(job.company, job.role, job.jobDescription || ''); onClose(); }} className="btn btn-primary btn-sm" style={{ background: '#f59e0b', borderColor: '#f59e0b', fontSize: 12, gap: 4, display: 'flex', alignItems: 'center' }}>
+                    Practice <Play size={10} fill="currentColor" />
+                  </button>
+                </div>
+              )}
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 8, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
                   Application Status
@@ -726,22 +741,20 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   
-                  {/* 1. ATS Match Scan */}
+                  {/* 1. Job Compatibility Match Score */}
                   <div className="card-static" style={{ padding: 18, border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <h4 style={{ fontSize: 13.5, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                        <Brain size={14} color="var(--teal)" /> ATS Match Scan
+                        <Brain size={14} color="var(--teal)" /> Job Compatibility Match Score
                       </h4>
                       <button onClick={handleScanATS} disabled={atsLoading} className="btn btn-primary btn-sm" style={{ fontSize: 11.5 }}>
                         {atsLoading ? 'Scanning...' : atsResult ? 'Re-Scan' : 'Scan Match'}
                       </button>
                     </div>
 
-                    {!atsResult && !atsLoading && (
-                      <p style={{ fontSize: 12, color: 'var(--text-3)', margin: 0 }}>
-                        Analyze this job description against your resume keywords to check compatibility.
-                      </p>
-                    )}
+                    <p style={{ fontSize: 11.5, color: 'var(--text-3)', margin: '0 0 10px 0', lineHeight: 1.4 }}>
+                      This score measures keyword and skill relevance between your active resume and this specific job description. To optimize your general resume layout compliance, use the <strong>Resume Formatting Compliance Score</strong> in the Profile page.
+                    </p>
 
                     {atsLoading && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0' }}>

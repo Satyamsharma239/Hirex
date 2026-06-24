@@ -5,10 +5,14 @@ import Dashboard from './components/Dashboard';
 import ResumeProfile from './components/ResumeProfile';
 import JobDiscovery from './components/JobDiscovery';
 import PublicProfile from './components/PublicProfile';
+import OnboardingPortal from './components/OnboardingPortal';
+import ConsoleOverview from './components/ConsoleOverview';
+import InterviewPrep from './components/InterviewPrep';
 import { Menu, Compass, ChevronRight, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
-  const [page, setPage]               = useState('dashboard');
+  const [page, setPage]               = useState('console');
+  const [prepPrefill, setPrepPrefill] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isPublicRoute, setIsPublicRoute] = useState(false);
 
@@ -18,7 +22,6 @@ export default function App() {
     }
   }, []);
 
-  // Resume analysis & Profile state — loaded from localStorage to persist across refreshes
   const [resumeText, setResumeText] = useState(() => localStorage.getItem('hirex_resume_text') || '');
   const [resumeData, setResumeData] = useState(() => {
     try {
@@ -57,25 +60,47 @@ export default function App() {
   // Job Discovery params (set when coming from Career DNA)
   const [discoverParams, setDiscoverParams] = useState({ role: '', skills: [] });
 
-  // Called from Career DNA "Find Jobs" button
   const handleDiscoverJobs = (role, skills) => {
     setDiscoverParams({ role, skills });
     setPage('discover');
   };
 
   const PAGE_META = {
-    dashboard: 'Job Tracker',
+    console:   'Console Overview',
+    profile:   'Resume Optimizer',
     discover:  'Job Discovery',
-    profile:   'Resume Profile',
+    prep:      'Interview Prep',
+    dashboard: 'Job Tracker',
   };
 
   const renderPage = () => {
     switch (page) {
+      case 'console': return (
+        <ConsoleOverview
+          onNavigate={setPage}
+          resumeData={resumeData}
+          dnaData={dnaData}
+          auditData={auditData}
+        />
+      );
+
       case 'dashboard': return (
         <Dashboard
           onNavigate={setPage}
           resumeText={resumeText}
           resumeData={resumeData}
+          onSimulateInterview={(c, r, d) => {
+            setPrepPrefill({ company: c, role: r, description: d });
+            setPage('prep');
+          }}
+        />
+      );
+
+      case 'prep': return (
+        <InterviewPrep
+          resumeData={resumeData}
+          prefillData={prepPrefill}
+          onClearPrefill={() => setPrepPrefill(null)}
         />
       );
 
@@ -94,17 +119,43 @@ export default function App() {
         <JobDiscovery
           initialRole={discoverParams.role}
           initialSkills={discoverParams.skills}
+          resumeAnalyzed={!!resumeText}
           resumeData={resumeData}
           resumeText={resumeText}
         />
       );
 
-      default: return <Dashboard onNavigate={setPage} resumeText={resumeText} resumeData={resumeData} />;
+      default: return (
+        <ConsoleOverview
+          onNavigate={setPage}
+          resumeData={resumeData}
+          dnaData={dnaData}
+          auditData={auditData}
+        />
+      );
     }
   };
 
   if (isPublicRoute) {
     return <PublicProfile />;
+  }
+
+  if (!resumeText) {
+    return (
+      <>
+        <Toaster position="top-right" toastOptions={{
+          style: {
+            background: '#0d1f38', color: '#e8f0fe',
+            border: '1px solid rgba(0,201,167,0.2)',
+            borderRadius: 12, fontSize: 13.5, fontWeight: 500,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          },
+          success: { iconTheme: { primary: '#00c9a7', secondary: '#0d1f38' } },
+          error:   { iconTheme: { primary: '#f43f5e', secondary: '#0d1f38' } },
+        }} />
+        <OnboardingPortal onComplete={handleUpdateProfile} />
+      </>
+    );
   }
 
   return (
@@ -123,7 +174,6 @@ export default function App() {
       <Sidebar active={page} onNavigate={setPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div style={{ marginLeft: 'var(--sidebar-w)', minHeight: '100vh', background: 'var(--bg-root)' }}>
-        {/* Top Bar */}
         <header style={{
           height: 58, borderBottom: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',

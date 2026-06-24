@@ -1,12 +1,14 @@
 import React from 'react';
 import {
-  LayoutDashboard, Briefcase, ChevronRight, X, Zap, Compass, UserCheck
+  LayoutDashboard, Briefcase, ChevronRight, X, Zap, Compass, UserCheck, Brain
 } from 'lucide-react';
 
 const NAV = [
-  { id: 'dashboard', icon: LayoutDashboard, label: 'Job Tracker',    sub: 'Manage applications' },
+  { id: 'console',   icon: LayoutDashboard, label: 'Console Overview', sub: 'Home command center' },
+  { id: 'profile',   icon: UserCheck,       label: 'Resume Optimizer', sub: 'Career DNA & brand' },
   { id: 'discover',  icon: Compass,         label: 'Job Discovery',   sub: 'Find open positions' },
-  { id: 'profile',   icon: UserCheck,       label: 'Resume Profile',  sub: 'Career DNA & brand'  },
+  { id: 'prep',      icon: Brain,           label: 'Interview Prep',  sub: 'Practice with AI Simulator' },
+  { id: 'dashboard', icon: Briefcase,       label: 'Job Tracker',     sub: 'Manage applications' }
 ];
 
 export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
@@ -30,7 +32,6 @@ export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
       }}
         className={!isOpen ? 'translate-x-0 max-lg:-translate-x-full' : ''}
       >
-        {/* Logo */}
         <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
@@ -58,7 +59,6 @@ export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
           </div>
         </div>
 
-        {/* Nav */}
         <nav style={{ padding: '16px 12px', flex: 1, overflowY: 'auto' }}>
           <div className="label" style={{ padding: '0 8px 10px' }}>MENU</div>
           {NAV.map(({ id, icon: Icon, label, sub }) => {
@@ -84,7 +84,6 @@ export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
 
         </nav>
 
-        {/* Bottom promo */}
         <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(0,201,167,0.08), rgba(59,130,246,0.05))',

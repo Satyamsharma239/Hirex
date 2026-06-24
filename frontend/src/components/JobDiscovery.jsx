@@ -618,7 +618,7 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
 // ── Main Component ─────────────────────────────────────────────────
 export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyzed, resumeData, resumeText }) {
   const [role, setRole]         = useState(initialRole || '');
-  const [city, setCity]         = useState('Bangalore');
+  const [city, setCity]         = useState('Any Location');
   const [experience, setExp]    = useState('Fresher (0 yr)');
   const [jobs, setJobs]         = useState([]);
   const [loading, setLoading]   = useState(false);
@@ -643,9 +643,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
       setRole(initialRole);
       doSearch(initialRole);
     } else {
-      const defaultRole = "Software Engineer";
-      setRole(defaultRole);
-      doSearch(defaultRole);
+      setRole("Software Engineer");
     }
   }, [initialRole]);
 

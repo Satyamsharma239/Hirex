@@ -7,7 +7,7 @@ import {
   Search, MapPin, Briefcase, Clock, Users, Mail,
   RefreshCw, X, BookmarkPlus, Zap, Filter,
   CheckCircle2, Send, Copy, Check, User,
-  ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost
+  ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost, Bell
 } from 'lucide-react';
 
 // ── Constants ──────────────────────────────────────────────────────

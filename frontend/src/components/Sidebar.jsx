@@ -25,7 +25,9 @@ export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
       <aside style={{
         position: 'fixed', left: 0, top: 0, bottom: 0, width: 'var(--sidebar-w)',
         zIndex: 40, transform: isOpen ? 'translateX(0)' : undefined,
-        background: 'var(--bg-surface)',
+        background: 'rgba(8, 14, 27, 0.8)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
         transition: 'transform 0.3s ease',

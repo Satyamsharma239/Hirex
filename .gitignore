@@ -33,3 +33,6 @@ logs/
 *.njsproj
 *.sln
 *.sw?
+
+# Local Agent customizations
+.agents/

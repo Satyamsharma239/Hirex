@@ -394,19 +394,82 @@ function getFallbackMock(promptText) {
 
   // 8. Interview Sim Answer Score
   if (p.includes('evaluating a candidate') || p.includes('score this answer')) {
+    const answerMatch = promptText.match(/Candidate's answer:\s*"([\s\S]*?)"/i) ||
+                        promptText.match(/Candidate's answer:\s*([\s\S]*)/i);
+    const ans = answerMatch ? answerMatch[1].trim() : '';
+    const ansLower = ans.toLowerCase();
+
+    const noIdeaWords = ['dont know', "don't know", 'no idea', 'skip', 'pass', 'not sure', 'have no idea', 'i do not know', 'cannot answer', 'no clue'];
+    const isNoIdea = ans.length < 10 || noIdeaWords.some(w => ansLower.includes(w));
+
+    if (isNoIdea) {
+      return {
+        "score": 0,
+        "grade": "D",
+        "strengths": ["None. Candidate opted to skip or stated they do not know."],
+        "improvements": ["Review the core topics for this role.", "Try to provide partial definitions or related concepts instead of skipping."],
+        "sampleAnswer": "A professional answer would cover the basic definition of the concept, its core utility, and a simple project-level example of how you used it.",
+        "keyMissed": "All core concepts and technical definitions.",
+        "confidence": "Low",
+        "deliveryAnalytics": {
+          "speakingSpeed": ans.length > 0 ? `${Math.round(ans.split(/\s+/).length * 60 / 5)} WPM (Too Short)` : "0 WPM (No speech)",
+          "fillerCount": 0,
+          "fillersUsed": [],
+          "communicationTone": "Hesitant"
+        }
+      };
+    }
+
+    const wordCount = ans.split(/\s+/).filter(Boolean).length;
+    let score = 50;
+    const strengths = [];
+    const improvements = [];
+
+    if (wordCount < 10) {
+      score = 30;
+      improvements.push("The answer is too brief. Elaborate further with architectural details.");
+    } else if (wordCount > 50) {
+      score += 15;
+      strengths.push("Detailed explanation with solid volume of speech.");
+    } else {
+      score += 5;
+      strengths.push("Good conciseness.");
+    }
+
+    const keywords = ['react', 'node', 'express', 'mongodb', 'javascript', 'api', 'state', 'database', 'caching', 'index', 'component', 'hooks', 'query', 'scale', 'async', 'thread', 'event loop', 'security', 'token', 'auth'];
+    const matchedKeywords = keywords.filter(k => ansLower.includes(k));
+    
+    if (matchedKeywords.length > 0) {
+      score += Math.min(25, matchedKeywords.length * 5);
+      strengths.push(`Good usage of technical terms: ${matchedKeywords.slice(0, 3).join(', ')}.`);
+    } else {
+      score -= 10;
+      improvements.push("Incorporate more role-specific technical terms and keywords.");
+    }
+
+    if (ansLower.includes('example') || ansLower.includes('project') || ansLower.includes('built')) {
+      score += 10;
+      strengths.push("Included real-world project context or examples.");
+    } else {
+      improvements.push("Mention a specific project or feature you built using this technology.");
+    }
+
+    score = Math.max(10, Math.min(98, score));
+    const grade = score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 50 ? 'C' : 'D';
+
     return {
-      "score": 85,
-      "grade": "A",
-      "strengths": ["Clear explanation of core concepts", "Logical structure in answering"],
-      "improvements": ["Could mention specific project examples", "Keep responses slightly more concise"],
-      "sampleAnswer": "To optimize React performance, you should identify unnecessary re-renders. Use React.memo for component memoization, useMemo to cache expensive computations, and useCallback to preserve function references across renders.",
-      "keyMissed": "Code splitting and lazy loading techniques.",
-      "confidence": "High",
+      "score": score,
+      "grade": grade,
+      "strengths": strengths.length > 0 ? strengths : ["Understands the core concept basics."],
+      "improvements": improvements.length > 0 ? improvements : ["Elaborate slightly more on real-world edge cases."],
+      "sampleAnswer": "An optimal response would define the core concept clearly, specify why it's chosen over alternatives, detail its internal operations (such as caching or memory management), and provide a brief example from your portfolio.",
+      "keyMissed": "Production-level performance metrics and system design trade-offs.",
+      "confidence": score >= 75 ? "High" : "Medium",
       "deliveryAnalytics": {
-        "speakingSpeed": "140 WPM (Optimal)",
-        "fillerCount": 1,
+        "speakingSpeed": `${Math.round(wordCount * 1.2)} WPM (Optimal)`,
+        "fillerCount": Math.max(0, Math.floor(wordCount / 20) - 1),
         "fillersUsed": ["like"],
-        "communicationTone": "Confident & Technical"
+        "communicationTone": score >= 75 ? "Confident & Technical" : "Conversational"
       }
     };
   }

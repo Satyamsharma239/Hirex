@@ -489,14 +489,14 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
           const col = r.score >= 80 ? '#10b981' : r.score >= 60 ? '#f59e0b' : '#f43f5e';
           const qType = s.question?.type || 'Technical';
           return (
-            <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+            <div key={i} className="glass-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border-glass)', background: 'rgba(255, 255, 255, 0.01)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: `${TYPE_COLORS[qType] || '#64748b'}15`, color: TYPE_COLORS[qType] || '#64748b' }}>{qType}</span>
-                  <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>Q{i + 1}: {s.question?.question?.slice(0, 60)}...</span>
+                  <span style={{ fontSize: 13.5, color: 'var(--text-1)', fontWeight: 600 }}>Q{i + 1}: {s.question?.question?.slice(0, 60)}...</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 16, fontWeight: 900, color: col }}>{r.score || 0}</span>
+                  <span style={{ fontSize: 18, fontWeight: 900, color: col }}>{r.score || 0}</span>
                   <span style={{ fontSize: 11, color: 'var(--text-3)' }}>/100</span>
                 </div>
               </div>

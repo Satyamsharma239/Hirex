@@ -461,39 +461,43 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       />
 
       {!resumeText ? (
-        <div style={{ maxWidth: 680, margin: '60px auto 0', textAlign: 'center' }}>
-          <div style={{ marginBottom: 32 }}>
-            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.8px', color: '#ffffff' }}>Unlock Your Career DNA</h1>
-            <p style={{ fontSize: 15, color: 'var(--text-3)', marginTop: 8 }}>
-              Upload your resume to analyze your ATS score, discover missing keywords, and automatically create a recruiter-optimized brand card.
+        <div className="page-enter" style={{ maxWidth: 680, margin: '60px auto 0', textAlign: 'center' }}>
+          <div style={{ marginBottom: 36 }}>
+            <h1 style={{ fontSize: 36, fontWeight: 900, letterSpacing: '-1px', color: '#ffffff', marginBottom: 12 }}>
+              Unlock Your <span className="gradient-text">Career DNA</span>
+            </h1>
+            <p style={{ fontSize: 15, color: 'var(--text-2)', lineHeight: 1.6 }}>
+              Upload your resume to analyze your ATS score, discover missing keywords, and automatically create a recruiter-optimized career dashboard.
             </p>
           </div>
 
           <div 
-            className="card"
+            className="glass-card"
             onDragOver={e => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
             style={{
-              padding: 60, textAlign: 'center', cursor: 'pointer',
-              borderColor: dragging ? 'var(--teal)' : 'var(--border)',
-              background: dragging ? 'var(--teal-dim)' : 'var(--bg-card)',
-              transition: 'all 0.3s', borderStyle: 'dashed', borderWidth: 2, borderRadius: 20,
+              padding: '60px 40px', textAlign: 'center', cursor: 'pointer',
+              borderColor: dragging ? 'var(--teal)' : 'rgba(255,255,255,0.08)',
+              background: dragging ? 'rgba(0, 201, 167, 0.08)' : 'rgba(13, 21, 39, 0.35)',
+              borderStyle: 'dashed', borderWidth: 2, borderRadius: 24,
+              boxShadow: dragging ? 'var(--teal-glow-intense)' : '0 12px 32px rgba(0,0,0,0.3)',
+              transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
             onClick={handleUploadClick}
           >
-            <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--teal-dim)', border: '1px solid var(--border-teal)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-              <Upload size={28} color="var(--teal)" />
+            <div style={{ width: 68, height: 68, borderRadius: 20, background: 'rgba(0, 201, 167, 0.08)', border: '1px solid rgba(0, 201, 167, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 8px 24px rgba(0,201,167,0.1)' }}>
+              <Upload size={28} color="var(--teal)" style={{ animation: dragging ? 'float 2s infinite' : 'none' }} />
             </div>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>Drag & Drop Resume</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 6, marginBottom: 20 }}>PDF, DOCX, or DOC formats accepted (Max 10MB)</p>
-            <button className="btn btn-primary" style={{ margin: '0 auto' }}>Browse File</button>
+            <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-1)', margin: '0 0 8px 0', letterSpacing: '-0.3px' }}>Drag & Drop Resume</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>PDF or DOCX format accepted (Max 10MB)</p>
+            <button className="btn btn-primary" style={{ margin: '0 auto' }}>Browse Files</button>
           </div>
 
           {loading && (
-            <div className="card-static" style={{ padding: 20, display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center', marginTop: 24 }}>
+            <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 14, justifyContent: 'center', marginTop: 28, border: '1px solid rgba(0,201,167,0.15)' }}>
               <div className="spinner spinner-teal" style={{ width: 18, height: 18, borderWidth: 2 }} />
-              <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Analyzing resume profile & computing match coordinates...</span>
+              <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontWeight: 550 }}>Analyzing resume profile & computing match coordinates...</span>
             </div>
           )}
         </div>
@@ -518,12 +522,11 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
               )}
             </div>
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24 }} className="dna-dashboard-grid">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div className="card" style={{ padding: 24 }}>
+              <div className="glass-card" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Brain size={16} color="var(--teal)" />
+                  <Brain size={16} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                   DETECTED SKILLS & KEYWORDS
                 </h3>
                 
@@ -588,9 +591,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                 </div>
               </div>
 
-              <div className="card" style={{ padding: 24 }}>
+              <div className="glass-card" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-1)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Zap size={16} color="var(--teal)" />
+                  <Zap size={16} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                   OPTIMIZATION ACTIONS
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -623,7 +626,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
-                <div className="card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.05), rgba(59, 130, 246, 0.03))' }}>
+                <div className="glass-card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.05), rgba(59, 130, 246, 0.03))', border: '1px solid rgba(0, 201, 167, 0.15)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--teal)', letterSpacing: '0.8px' }}>ATS COMPATIBILITY SCORE</span>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>VERIFIED</span>
@@ -647,22 +650,22 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                   </div>
                 </div>
 
-                <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="glass-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <h3 style={{ fontSize: 13, fontWeight: 900, color: 'var(--text-1)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <ListChecks size={15} color="var(--teal)" />
+                      <ListChecks size={15} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                       RESUME INSIGHTS
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Keyword Alignment</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 12 }}>PASS</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Formatting Quality</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 12 }}>PASS</span>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--text-2)' }}>Impact Phrases</span>
                         <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: 12 }}>PASS</span>
                       </div>
@@ -674,9 +677,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                 </div>
               </div>
 
-              <div className="card" style={{ padding: 20 }}>
+              <div className="glass-card" style={{ padding: 20 }}>
                 <h3 style={{ fontSize: 13, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Star size={15} color="var(--teal)" />
+                  <Star size={15} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                   SUGGESTED KEYWORDS
                 </h3>
                 <p style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>Incorporate these high-demand terms to boost compatibility score in target applications.</p>
@@ -697,7 +700,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                 </div>
               </div>
 
-              <div className="card" style={{ padding: 24 }}>
+              <div className="glass-card" style={{ padding: 24 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
                   <div>
                     <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-1)', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -763,9 +766,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                 />
               </div>
 
-              <div id="achievement-optimizer-section" className="card" style={{ padding: 24 }}>
+              <div id="achievement-optimizer-section" className="glass-card" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Target size={16} color="var(--teal)" />
+                  <Target size={16} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                   METRICS-DRIVEN ACHIEVEMENT OPTIMIZER (AIM)
                 </h3>
                 <p style={{ fontSize: 12.5, color: 'var(--text-3)', margin: '0 0 16px 0', lineHeight: 1.4 }}>
@@ -781,12 +784,12 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     <div>
                       <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6 }}>Plain Bullet Point / Achievement</label>
                       <textarea 
-                        value={bulletInp} 
-                        onChange={e => setBulletInp(e.target.value)} 
-                        className="inp" 
-                        rows={3} 
-                        style={{ width: '100%', resize: 'none' }}
-                        placeholder="e.g. Worked on website speed optimization and fixed database query locks." 
+                         value={bulletInp} 
+                         onChange={e => setBulletInp(e.target.value)} 
+                         className="inp" 
+                         rows={3} 
+                         style={{ width: '100%', resize: 'none' }}
+                         placeholder="e.g. Worked on website speed optimization and fixed database query locks." 
                       />
                     </div>
                     <button onClick={handleOptimizeXYZ} disabled={xyzLoading || !bulletInp.trim()} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
@@ -830,9 +833,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                 </div>
               </div>
 
-              <div id="recreate-resume-section" className="card" style={{ padding: 24 }}>
+              <div id="recreate-resume-section" className="glass-card" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 14, fontWeight: 900, color: 'var(--text-1)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Sparkles size={16} color="var(--teal)" />
+                  <Sparkles size={16} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
                   RECREATE ENTIRE RESUME (AIM FORMULA)
                 </h3>
                 <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 14px 0', lineHeight: 1.4 }}>

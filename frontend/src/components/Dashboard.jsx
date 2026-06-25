@@ -277,7 +277,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
         </div>
       </div>
 
-      <div className="card-static" style={{ padding: '20px', marginBottom: 20, overflow: 'hidden' }}>
+      <div className="glass-card" style={{ padding: '20px', marginBottom: 20, overflow: 'hidden', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)' }}>
         <div style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 600, marginBottom: 10, letterSpacing: '1px' }}>CONVERSION FUNNEL</div>
         <div style={{ height: 160, width: '100%', position: 'relative' }}>
           <ResponsiveContainer width="100%" height="100%">
@@ -304,7 +304,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
       </div>
 
       {/* Table Section */}
-      <div className="card-static" style={{ overflow: 'hidden' }}>
+      <div className="glass-card" style={{ overflow: 'hidden', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)' }}>
         {/* Table Controls */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ position: 'relative', flex: '1', minWidth: 200 }}>
@@ -473,7 +473,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
               const formattedDate = rawDate.toLocaleDateString('en-US', { day: '2-digit', month: 'short' });
 
               return (
-                <div key={job._id} className="premium-list-card" onClick={() => setSelectedJob(job)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', marginBottom: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                <div key={job._id} className="premium-list-card" onClick={() => setSelectedJob(job)} style={{ cursor: 'pointer', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                     <div className="avatar-container" style={{ background: logoBg, width: 44, height: 44, borderRadius: 10, display: 'flex', alignItems: 'center', justify: 'center', border: logoBg === '#ffffff' ? '1px solid rgba(0,0,0,0.08)' : 'none' }}>
                       {logoSVG || job.company.substring(0, 1).toUpperCase()}

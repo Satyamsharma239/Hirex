@@ -279,8 +279,10 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
 
   return (
     <div style={{
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border)',
+      background: 'var(--bg-glass)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid var(--border-glass)',
       borderRadius: 16,
       padding: 24,
       position: 'relative',
@@ -288,7 +290,7 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
       flexDirection: 'column',
       gap: 16,
       transition: 'all 0.3s ease'
-    }} className="card-static">
+    }} className="glass-card">
       {/* Bookmark Icon */}
       <button 
         onClick={(e) => { e.stopPropagation(); onToggleSave(job); }} 
@@ -771,7 +773,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
       </div>
 
       {/* Search Bar Container */}
-      <div className="card-static" style={{ padding: 24, marginBottom: 28, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 16 }}>
+      <div className="glass-card" style={{ padding: 24, marginBottom: 28, background: 'var(--bg-glass)', border: '1px solid var(--border-glass)' }}>
         <div style={{ position: 'relative', width: '100%', marginBottom: 16 }}>
           <input 
             value={role} 

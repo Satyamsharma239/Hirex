@@ -241,7 +241,92 @@ async function fetchHimalayasJobs(role, location, page = 1) {
         benefits: ["Remote work flexibility", "Competitive stock/equity options", "Flexible paid time off"],
         matchScore: Math.floor(Math.random() * 20) + 78,
         matchReason: `High demand for your skills in ${role} development.`,
-        tags: j.categories || []
+        tags: j.categories || [],
+        applicationLink: j.applicationLink || j.guid || ""
+      };
+    });
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchArbeitnowJobs(role, location, page = 1) {
+  try {
+    const url = `https://www.arbeitnow.com/api/job-board-api?page=${page}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Arbeitnow API returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    const results = data.data || [];
+
+    const roleTerms = role.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+
+    const filtered = results.filter(j => {
+      const title = (j.title || "").toLowerCase();
+      const desc = (j.description || "").toLowerCase();
+      const tags = (j.tags || []).map(t => t.toLowerCase()).join(' ');
+      return roleTerms.every(term => title.includes(term) || desc.includes(term) || tags.includes(term));
+    });
+
+    return filtered.map(j => {
+      const companyName = j.company_name || "Target Company";
+      let cleanDesc = (j.description || "")
+        .replace(/<\/?[^>]+(>|$)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (cleanDesc.length > 250) {
+        cleanDesc = cleanDesc.slice(0, 247) + "...";
+      }
+
+      const listItems = (j.description || "").match(/<li>(.*?)<\/li>/gi)?.map(li => 
+        li.replace(/<\/?[^>]+(>|$)/g, "").trim()
+      ).filter(Boolean) || [];
+
+      const responsibilities = listItems.slice(0, Math.ceil(listItems.length / 2));
+      const requirements = listItems.slice(Math.ceil(listItems.length / 2));
+
+      if (responsibilities.length === 0) {
+        responsibilities.push(
+          "Collaborate with engineering teams to deploy scalable features.",
+          "Write clean, maintainable, and highly unit-tested source code.",
+          "Optimize browser rendering cycles and client side performance."
+        );
+      }
+      if (requirements.length === 0) {
+        requirements.push(
+          `Hands-on experience with modern technologies matching ${role}.`,
+          "Good understanding of version control systems and collaborative workflows.",
+          "Strong communication skills and analytical problem-solving mindset."
+        );
+      }
+
+      return {
+        id: String(j.slug || Math.random().toString(36).substr(2, 9)),
+        title: j.title || role,
+        company: companyName,
+        companyType: "Technology Company",
+        hrEmail: `recruiting@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`,
+        logo: companyName.substring(0, 2).toUpperCase(),
+        logoColor: getRandomColor(),
+        location: j.location || "Remote",
+        mode: j.remote ? "Remote" : "Hybrid",
+        type: "Full-time",
+        salary: "Competitive Salary",
+        experience: "2-4 years",
+        posted: "1 day ago",
+        deadline: "Open",
+        openings: 1,
+        description: cleanDesc,
+        responsibilities: responsibilities.slice(0, 5),
+        requirements: requirements.slice(0, 5),
+        niceToHave: ["Familiarity with containerization and cloud orchestration.", "Experience in agile product development."],
+        benefits: ["Comprehensive medical plan", "Flexible work schedule", "Learning and development budget"],
+        matchScore: Math.floor(Math.random() * 20) + 78,
+        matchReason: `High keyword alignment with your tech stack for ${role}.`,
+        tags: j.tags || [],
+        applicationLink: j.url || ""
       };
     });
   } catch (err) {
@@ -261,14 +346,25 @@ router.post('/jobs', async (req, res) => {
 
     let jobs = [];
 
-    try {
-      jobs = await fetchAdzunaJobs(role, location, page);
-    } catch (adzunaErr) {
-    }
+    const apiResults = await Promise.allSettled([
+      fetchAdzunaJobs(role, location, page),
+      fetchHimalayasJobs(role, location, page),
+      fetchArbeitnowJobs(role, location, page)
+    ]);
 
-    if (jobs.length === 0) {
-      jobs = await fetchHimalayasJobs(role, location, page);
-    }
+    const adzunaJobs = apiResults[0].status === 'fulfilled' ? apiResults[0].value : [];
+    const himalayasJobs = apiResults[1].status === 'fulfilled' ? apiResults[1].value : [];
+    const arbeitnowJobs = apiResults[2].status === 'fulfilled' ? apiResults[2].value : [];
+
+    jobs = [...adzunaJobs, ...himalayasJobs, ...arbeitnowJobs];
+
+    const seen = new Set();
+    jobs = jobs.filter(j => {
+      const key = `${j.title.toLowerCase()}:${j.company.toLowerCase()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     if (jobs.length === 0) {
       try {

@@ -58,7 +58,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
   const [modalOpen, setModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
 
-  const apiHost = window.location.origin.includes('localhost') ? 'http://localhost:5001' : window.location.origin;
+  const apiHost = window.location.origin.includes('127.0.0.1') || window.location.origin.includes('localhost') ? 'http://127.0.0.1:5001' : window.location.origin;
   const bookmarkletHref = `javascript:(function(){const d=document;const data={company:d.querySelector('.topcard__org-name-link, .job-details-jobs-unified-top-card__company-name')?.innerText||'Unknown',role:d.querySelector('.top-card-layout__title, .job-details-jobs-unified-top-card__job-title')?.innerText||d.title,location:d.querySelector('.topcard__flavor--bullet')?.innerText||'',link:window.location.href,description:d.body.innerText.substring(0,200),source:window.location.hostname};fetch('${apiHost}/api/jobs/external',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(r=>r.json()).then(res=>{if(res.success)alert('Job saved to HireX Tracker!');else alert('Failed to save job');}).catch(e=>alert('Error saving job'));})();`;
   const [selectedJob, setSelectedJob] = useState(null);
   const [search, setSearch] = useState('');

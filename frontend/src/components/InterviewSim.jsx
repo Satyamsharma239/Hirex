@@ -54,6 +54,7 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isListening, setIsListening]   = useState(false);
   const recognitionRef                  = useRef(null);
+  const recognitionStartTextRef         = useRef('');
 
   // Webcam & AI waveform states
   const [stream, setStream]             = useState(null);
@@ -189,12 +190,14 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-IN';
       recognitionRef.current.onresult = (e) => {
-        let text = '';
+        let transcript = '';
         for (let i = 0; i < e.results.length; i++) {
-          text += e.results[i][0].transcript;
+          transcript += e.results[i][0].transcript;
         }
-        setAnswer(text);
+        const base = recognitionStartTextRef.current || '';
+        setAnswer(base + (base && !base.endsWith(' ') ? ' ' : '') + transcript);
       };
       recognitionRef.current.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
@@ -341,7 +344,7 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      if (answer) setAnswer('');
+      recognitionStartTextRef.current = answer;
       try {
         recognitionRef.current.start();
         setIsListening(true);
@@ -673,88 +676,89 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
               {q.question}
             </p>
 
-            {showTextInput ? (
-              <textarea
-                ref={textRef}
-                value={answer}
-                onChange={e => setAnswer(e.target.value)}
-                placeholder="Type your answer here..."
-                className="inp"
-                rows={6}
-                style={{ 
-                  resize: 'none', 
-                  fontSize: 13.5, 
-                  lineHeight: 1.6, 
-                  background: 'rgba(6, 13, 26, 0.4)', 
-                  border: '1px solid rgba(0, 201, 167, 0.25)',
-                  width: '100%'
-                }}
-              />
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{
-                  padding: 12,
-                  minHeight: 100,
-                  maxHeight: 120,
-                  overflowY: 'auto',
-                  background: 'rgba(6, 13, 26, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                  borderRadius: 10,
-                  fontSize: 13,
-                  color: answer ? 'var(--text-1)' : 'var(--text-3)',
-                  fontStyle: answer ? 'normal' : 'italic',
-                  lineHeight: 1.5
-                }}>
-                  {answer || "Click 'Start Recording' below and start speaking..."}
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <button 
-                    type="button"
-                    onClick={toggleListening}
-                    className="btn"
-                    style={{
-                      padding: '8px 18px',
-                      borderRadius: 20,
-                      fontWeight: 700,
-                      fontSize: 12.5,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      background: isListening ? 'rgba(244, 63, 94, 0.15)' : 'rgba(0, 201, 167, 0.15)',
-                      border: isListening ? '1px solid #f43f5e' : '1px solid #00c9a7',
-                      color: isListening ? '#f43f5e' : '#00c9a7',
-                      boxShadow: isListening ? '0 0 12px rgba(244, 63, 94, 0.3)' : '0 0 12px rgba(0, 201, 167, 0.2)',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    {isListening ? 'Stop Recording' : 'Start Recording'}
-                  </button>
-                </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  ref={textRef}
+                  value={answer}
+                  onChange={e => setAnswer(e.target.value)}
+                  placeholder="Speak your answer (click 'Start Recording' below) or type directly in this box..."
+                  className="inp"
+                  rows={6}
+                  style={{ 
+                    resize: 'vertical', 
+                    fontSize: 13.5, 
+                    lineHeight: 1.6, 
+                    background: 'rgba(6, 13, 26, 0.4)', 
+                    border: '1px solid rgba(0, 201, 167, 0.25)',
+                    width: '100%',
+                    minHeight: 120,
+                    padding: '14px',
+                    borderRadius: '12px',
+                    outline: 'none',
+                    transition: 'border-color 0.2s'
+                  }}
+                />
+                {isListening && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 12,
+                    right: 12,
+                    background: 'rgba(244, 63, 94, 0.12)',
+                    border: '1px solid rgba(244, 63, 94, 0.3)',
+                    borderRadius: '20px',
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    color: '#f43f5e',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6
+                  }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f43f5e', animation: 'pulse 1s infinite' }} />
+                    Listening...
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <button 
+                  type="button"
+                  onClick={toggleListening}
+                  className="btn"
+                  style={{
+                    padding: '8px 18px',
+                    borderRadius: '20px',
+                    fontWeight: 700,
+                    fontSize: 12.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    background: isListening ? 'rgba(244, 63, 94, 0.15)' : 'rgba(0, 201, 167, 0.15)',
+                    border: isListening ? '1px solid #f43f5e' : '1px solid #00c9a7',
+                    color: isListening ? '#f43f5e' : '#00c9a7',
+                    boxShadow: isListening ? '0 0 12px rgba(244, 63, 94, 0.3)' : '0 0 12px rgba(0, 201, 167, 0.2)',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {isListening ? (
+                    <>
+                      <span className="spinner spinner-rose" style={{ width: 14, height: 14, borderWidth: 2 }} />
+                      Stop Recording
+                    </>
+                  ) : (
+                    <>
+                      🎤 Start Recording
+                    </>
+                  )}
+                </button>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <button 
-              onClick={() => setShowTextInput(!showTextInput)} 
-              className="btn btn-ghost btn-sm" 
-              style={{ fontSize: 11, height: 32, gap: 5, borderColor: 'rgba(255,255,255,0.06)' }}
-            >
-              {showTextInput ? '🎤 Switch to Mic' : '⌨️ Type Answer'}
-            </button>
-            
-            {isListening ? (
-              <div style={{ fontSize: 12.5, color: '#f43f5e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f43f5e', animation: 'pulse 1s infinite' }} />
-                Transcribing...
+                <div style={{ fontSize: 12.5, color: 'var(--text-3)', fontWeight: 500 }}>
+                  Current Time: {mins}:{secs}
+                </div>
               </div>
-            ) : (
-              <div style={{ fontSize: 12.5, color: 'var(--text-3)', fontWeight: 500 }}>
-                Current Time: {mins}:{secs}
-              </div>
-            )}
+            </div>
           </div>
         </div>
 

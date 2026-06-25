@@ -5,7 +5,7 @@ import InterviewSim from './InterviewSim';
 import { GhostRatePredictor, FollowupEngine } from './FeatureModals';
 import {
   Search, MapPin, Briefcase, Clock, Users, Mail,
-  RefreshCw, X, BookmarkPlus, Zap, Filter,
+  RefreshCw, X, BookmarkPlus, Bookmark, Zap, Filter,
   CheckCircle2, Send, Copy, Check, User,
   ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost, Bell
 } from 'lucide-react';

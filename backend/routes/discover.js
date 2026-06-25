@@ -152,6 +152,103 @@ async function fetchAdzunaJobs(role, location, page = 1) {
   });
 }
 
+async function fetchHimalayasJobs(role, location, page = 1) {
+  try {
+    const limit = 20;
+    const offset = (page - 1) * limit;
+    const url = `https://himalayas.app/jobs/api/search?q=${encodeURIComponent(role)}&limit=${limit}&offset=${offset}`;
+    
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Himalayas API returned status ${res.status}`);
+    }
+
+    const data = await res.json();
+    const results = data.jobs || [];
+
+    return results.map(j => {
+      const companyName = j.companyName || "Target Company";
+      
+      let salaryText = "Competitive Salary";
+      if (j.minSalary) {
+        const currencySym = j.currency === 'USD' ? '$' : j.currency || '';
+        salaryText = `${currencySym}${j.minSalary.toLocaleString()}`;
+        if (j.maxSalary) {
+          salaryText += ` - ${currencySym}${j.maxSalary.toLocaleString()}`;
+        }
+        if (j.salaryPeriod === 'annual') {
+          salaryText += ' / year';
+        } else if (j.salaryPeriod === 'hourly') {
+          salaryText += ' / hour';
+        }
+      }
+
+      let cleanDesc = (j.excerpt || j.description || "")
+        .replace(/<\/?[^>]+(>|$)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (cleanDesc.length > 250) {
+        cleanDesc = cleanDesc.slice(0, 247) + "...";
+      }
+
+      const listItems = (j.description || "").match(/<li>(.*?)<\/li>/gi)?.map(li => 
+        li.replace(/<\/?[^>]+(>|$)/g, "").trim()
+      ).filter(Boolean) || [];
+
+      const responsibilities = listItems.slice(0, Math.ceil(listItems.length / 2));
+      const requirements = listItems.slice(Math.ceil(listItems.length / 2));
+
+      if (responsibilities.length === 0) {
+        responsibilities.push(
+          "Collaborate with the cross-functional product and engineering teams.",
+          "Write clean, maintainable, and high-performance production code.",
+          "Debug and troubleshoot application issues and customer bug reports."
+        );
+      }
+      if (requirements.length === 0) {
+        requirements.push(
+          `Strong proficiency with technologies related to ${role}.`,
+          "Excellent written and verbal communication skills.",
+          "Ability to work effectively in a fully remote environment."
+        );
+      }
+
+      const postDate = j.pubDate ? new Date(j.pubDate * 1000) : new Date();
+      const diffTime = Math.abs(new Date() - postDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const postedText = diffDays <= 1 ? "Today" : `${diffDays} days ago`;
+
+      return {
+        id: String(j.guid || j.id || Math.random().toString(36).substr(2, 9)),
+        title: j.title || role,
+        company: companyName,
+        companyType: "Technology Company",
+        hrEmail: `careers@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`,
+        logo: companyName.substring(0, 2).toUpperCase(),
+        logoColor: getRandomColor(),
+        location: j.locationRestrictions && j.locationRestrictions.length ? j.locationRestrictions.join(', ') : 'Remote',
+        mode: "Remote",
+        type: j.employmentType || "Full-time",
+        salary: salaryText,
+        experience: j.seniority && j.seniority.length ? j.seniority.join(', ') : "2-4 years",
+        posted: postedText,
+        deadline: "Open until filled",
+        openings: 1,
+        description: cleanDesc,
+        responsibilities: responsibilities.slice(0, 5),
+        requirements: requirements.slice(0, 5),
+        niceToHave: ["Familiarity with modern deployment stacks.", "Prior experience in remote startup teams."],
+        benefits: ["Remote work flexibility", "Competitive stock/equity options", "Flexible paid time off"],
+        matchScore: Math.floor(Math.random() * 20) + 78,
+        matchReason: `High demand for your skills in ${role} development.`,
+        tags: j.categories || []
+      };
+    });
+  } catch (err) {
+    return [];
+  }
+}
+
 router.post('/jobs', async (req, res) => {
   try {
     const { role = '', location = 'Bangalore', skills = [], experience = 'Fresher', page = 1 } = req.body;
@@ -160,22 +257,23 @@ router.post('/jobs', async (req, res) => {
     const skillStr = Array.isArray(skills) ? skills.join(', ') : String(skills);
     const cacheKey = `jobs:${role}:${location}:${experience}:p${page}`.toLowerCase().replace(/\s+/g,'-');
     const hit = getCache(cacheKey);
-    if (hit) { console.log('[cache hit]', cacheKey); return res.json(hit); }
+    if (hit) return res.json(hit);
 
     let jobs = [];
 
     try {
       jobs = await fetchAdzunaJobs(role, location, page);
-      console.log(`[/jobs] Fetched ${jobs.length} real-time vacancies from Adzuna API.`);
     } catch (adzunaErr) {
-      console.log('⚠️ [Adzuna API Error/Not Configured]:', adzunaErr.message);
+    }
+
+    if (jobs.length === 0) {
+      jobs = await fetchHimalayasJobs(role, location, page);
     }
 
     if (jobs.length === 0) {
       try {
         const pageSize = 20;
         const batchSize = 10;
-        console.log(`[/jobs] Fetching from Gemini API for role: ${role}`);
         const [result1, result2] = await Promise.all([
           generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
           generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
@@ -184,18 +282,14 @@ router.post('/jobs', async (req, res) => {
         const gJobs = [...toArr(result1), ...toArr(result2)];
         const isFallback = gJobs.length > 0 && gJobs.some(j => j.id === 'job-fallback-1');
         
-        if (isFallback) {
-          console.log('⚠️ [Gemini fallback detected] Bypassing fallback card and using local database.');
-        } else {
+        if (!isFallback) {
           jobs = gJobs;
         }
       } catch (apiErr) {
-        console.warn('⚠️ [Gemini API Error]:', apiErr.message);
       }
     }
 
     if (jobs.length === 0) {
-      console.log('🌱 Searching local static database (JOBS_DATABASE) for role:', role);
       const searchTerms = role.toLowerCase().split(/\s+/).filter(t => t.length > 2);
       
       let filteredLocalJobs = JOBS_DATABASE.filter(j => {
@@ -224,7 +318,6 @@ router.post('/jobs', async (req, res) => {
     if (jobs.length > 5) setCache(cacheKey, out);
     res.json(out);
   } catch (err) {
-    console.error('[/jobs] ERROR:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

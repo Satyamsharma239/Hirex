@@ -62,8 +62,9 @@ mongoose.connect(process.env.MONGO_URI)
     try {
       const Job = require('./models/job');
       const count = await Job.countDocuments();
-      if (count === 0) {
+      if (count < 10) {
         console.log('🌱 Seeding mock jobs...');
+        await Job.deleteMany({});
         await Job.create([
           {
             company: "Google",
@@ -104,6 +105,116 @@ mongoose.connect(process.env.MONGO_URI)
             appliedDate: "2023-10-20",
             jobDescription: "Analyze music streaming metrics and recommendation algorithms.",
             notes: ""
+          },
+          {
+            company: "Razorpay",
+            role: "MERN Stack Developer",
+            status: "Saved",
+            location: "Bangalore, India",
+            salary: "12 - 18 LPA",
+            appliedDate: "2023-10-22",
+            jobDescription: "Build merchant portal and checkouts.",
+            notes: ""
+          },
+          {
+            company: "Zomato",
+            role: "React Developer",
+            status: "Interview",
+            location: "Gurugram, India",
+            salary: "10 - 15 LPA",
+            appliedDate: "2023-10-15",
+            jobDescription: "Optimize dashboards for partners.",
+            notes: "Next: Round 2 Tech (29 Oct)"
+          },
+          {
+            company: "Swiggy",
+            role: "Full Stack Developer",
+            status: "Saved",
+            location: "Bangalore, India",
+            salary: "14 - 22 LPA",
+            appliedDate: "2023-10-24",
+            jobDescription: "Scale checkout and cart services.",
+            notes: ""
+          },
+          {
+            company: "Paytm",
+            role: "Data Analyst",
+            status: "Rejected",
+            location: "Noida, India",
+            salary: "8 - 12 LPA",
+            appliedDate: "2023-09-28",
+            jobDescription: "Analyze financial transactions.",
+            notes: "Rejected due to lack of experience."
+          },
+          {
+            company: "Flipkart",
+            role: "UI Engineer",
+            status: "Applied",
+            location: "Bangalore, India",
+            salary: "12 - 18 LPA",
+            appliedDate: "2023-10-14",
+            jobDescription: "Develop modular front-end UI libraries.",
+            notes: ""
+          },
+          {
+            company: "Zepto",
+            role: "Backend Developer",
+            status: "Saved",
+            location: "Mumbai, India",
+            salary: "10 - 16 LPA",
+            appliedDate: "2023-10-25",
+            jobDescription: "Optimize express APIs and order routes.",
+            notes: ""
+          },
+          {
+            company: "TCS",
+            role: "Systems Engineer",
+            status: "Applied",
+            location: "Pune, India",
+            salary: "6 - 10 LPA",
+            appliedDate: "2023-10-10",
+            jobDescription: "Manage software delivery pipelines.",
+            notes: ""
+          },
+          {
+            company: "Nykaa",
+            role: "Product Designer",
+            status: "Interview",
+            location: "Gurgaon, India",
+            salary: "8 - 12 LPA",
+            appliedDate: "2023-10-11",
+            jobDescription: "Design checkout flow for mobile apps.",
+            notes: "Next: Design Review (27 Oct)"
+          },
+          {
+            company: "Wipro",
+            role: "Associate Developer",
+            status: "Rejected",
+            location: "Bangalore, India",
+            salary: "4 - 7 LPA",
+            appliedDate: "2023-09-20",
+            jobDescription: "Work on legacy Java projects.",
+            notes: "Rejected after coding round."
+          },
+          {
+            company: "Infosys",
+            role: "Software Engineer",
+            status: "Applied",
+            location: "Hyderabad, India",
+            salary: "5 - 8 LPA",
+            appliedDate: "2023-10-09",
+            jobDescription: "Implement API endpoints and testing.",
+            notes: ""
+          },
+          {
+            company: "CRED",
+            role: "Senior Frontend Engineer",
+            status: "Offered",
+            location: "Bangalore, India",
+            salary: "24 - 32 LPA",
+            appliedDate: "2023-10-05",
+            jobDescription: "Build mobile web views and animations.",
+            notes: "Offer letter signed."
           }
         ]);
         console.log('✅ Seeding complete!');

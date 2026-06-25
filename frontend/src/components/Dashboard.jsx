@@ -118,16 +118,20 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
       (j.location || '').toLowerCase().includes(search.toLowerCase())
     )
     .sort((a, b) => {
-      if (sortBy === 'date')    return new Date(b.appliedDate) - new Date(a.appliedDate);
+      if (sortBy === 'date') return new Date(b.appliedDate) - new Date(a.appliedDate);
       if (sortBy === 'company') return a.company.localeCompare(b.company);
       return a.role.localeCompare(b.role);
     });
-  const appliedCount = Math.max(148, stats.applied || 0);
-  const interviewCount = Math.max(19, stats.interviews || 0);
-  const offeredCount = Math.max(4, stats.offered || 0);
-  const rejectedCount = Math.max(4, stats.rejected || 0);
-  const activeCount = Math.max(42, stats.appliedActive || 0);
-  const pendingCount = Math.max(8, stats.saved || 0);
+  const totalCount = jobs.length;
+  const savedCount = jobs.filter(j => j.status === 'Saved').length;
+  const appliedCount = jobs.filter(j => j.status === 'Applied').length;
+  const interviewCount = jobs.filter(j => j.status === 'Interview').length;
+  const offeredCount = jobs.filter(j => j.status === 'Offered').length;
+  const rejectedCount = jobs.filter(j => j.status === 'Rejected').length;
+  const activeCount = savedCount + appliedCount + interviewCount;
+  const interviewRate = totalCount > 0 ? Math.round((interviewCount / totalCount) * 100) : 0;
+  const acceptedOfferCount = jobs.filter(j => j.status === 'Offered' && (j.notes || '').toLowerCase().includes('sign')).length;
+  const pendingOfferCount = Math.max(0, offeredCount - acceptedOfferCount);
 
   return (
     <div className="page-enter" style={{ padding: '28px 28px 40px' }}>
@@ -217,21 +221,21 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
             <div style={{ width: 64, height: 64, position: 'relative' }}>
               <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                 <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
-                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--amber)" strokeWidth="3" strokeDasharray="85, 100" strokeLinecap="round" style={{ filter: 'drop-shadow(0px 0px 6px rgba(245,158,11,0.3))' }} />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--amber)" strokeWidth="3" strokeDasharray={`${interviewRate}, 100`} strokeLinecap="round" style={{ filter: 'drop-shadow(0px 0px 6px rgba(245,158,11,0.3))' }} />
               </svg>
               <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
-                85%
+                {interviewRate}%
               </div>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Upcoming</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>6</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{interviewCount}</div>
             </div>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Pending</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>2</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{savedCount}</div>
             </div>
           </div>
         </div>
@@ -249,7 +253,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
                 {loading ? '—' : <CountUp to={offeredCount} />}
               </div>
               <div style={{ fontSize: 12, color: 'var(--emerald)', marginTop: 4, fontWeight: 600 }}>
-                1 New Offer
+                {pendingOfferCount > 0 ? `${pendingOfferCount} New Offer${pendingOfferCount > 1 ? 's' : ''}` : 'No new offers'}
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 42, paddingBottom: 2 }}>
@@ -263,11 +267,11 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
           <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Accepted</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>2</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{acceptedOfferCount}</div>
             </div>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Pending</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>1</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{pendingOfferCount}</div>
             </div>
           </div>
         </div>

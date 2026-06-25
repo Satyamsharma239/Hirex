@@ -37,7 +37,7 @@ function GradeRing({ grade, score }) {
   );
 }
 
-export default function InterviewSim({ company, role, jobDescription, onClose }) {
+export default function InterviewSim({ company, role, jobDescription, resumeData, onClose }) {
   const [phase, setPhase]         = useState('start');
   const [showTextInput, setShowTextInput] = useState(false);
   const [session, setSession]     = useState(null);
@@ -137,9 +137,9 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
             }
           })
           .catch((err) => {
-            console.warn('Microphone + Camera access failed. Retrying with video-only fallback...', err);
+            console.warn('Microphone + Camera access failed. Retrying with audio-only fallback...', err);
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-              navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false })
+              navigator.mediaDevices.getUserMedia({ video: false, audio: true })
                 .then((s2) => {
                   setStream(s2);
                   if (videoRef.current) {
@@ -147,7 +147,17 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
                   }
                 })
                 .catch((err2) => {
-                  console.warn('Webcam stream capture failed completely:', err2);
+                  console.warn('Audio-only stream capture failed. Retrying with video-only fallback...', err2);
+                  navigator.mediaDevices.getUserMedia({ video: { width: 480, height: 360 }, audio: false })
+                    .then((s3) => {
+                      setStream(s3);
+                      if (videoRef.current) {
+                        videoRef.current.srcObject = s3;
+                      }
+                    })
+                    .catch((err3) => {
+                      console.warn('Webcam stream capture failed completely:', err3);
+                    });
                 });
             }
           });
@@ -185,6 +195,15 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
           text += e.results[i][0].transcript;
         }
         setAnswer(text);
+      };
+      recognitionRef.current.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          toast.error('Microphone access denied. Please check browser permissions.');
+        } else {
+          toast.error(`Speech recognition error: ${event.error}`);
+        }
+        setIsListening(false);
       };
       recognitionRef.current.onend = () => setIsListening(false);
     }
@@ -650,6 +669,10 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
               Question {currentQ + 1}
             </div>
             
+            <p style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.5, margin: '0 0 14px 0' }}>
+              {q.question}
+            </p>
+
             {showTextInput ? (
               <textarea
                 ref={textRef}
@@ -657,24 +680,59 @@ export default function InterviewSim({ company, role, jobDescription, onClose })
                 onChange={e => setAnswer(e.target.value)}
                 placeholder="Type your answer here..."
                 className="inp"
-                rows={8}
+                rows={6}
                 style={{ 
                   resize: 'none', 
-                  fontSize: 14, 
-                  lineHeight: 1.7, 
+                  fontSize: 13.5, 
+                  lineHeight: 1.6, 
                   background: 'rgba(6, 13, 26, 0.4)', 
-                  border: '1px solid rgba(0, 201, 167, 0.25)' 
+                  border: '1px solid rgba(0, 201, 167, 0.25)',
+                  width: '100%'
                 }}
               />
             ) : (
-              <>
-                <p style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1.5, margin: '0 0 16px 0' }}>
-                  {q.question}
-                </p>
-                <p style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.6, margin: 0 }}>
-                  Please provide a detailed response. Your answer is being transcribed.
-                </p>
-              </>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{
+                  padding: 12,
+                  minHeight: 100,
+                  maxHeight: 120,
+                  overflowY: 'auto',
+                  background: 'rgba(6, 13, 26, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.05)',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  color: answer ? 'var(--text-1)' : 'var(--text-3)',
+                  fontStyle: answer ? 'normal' : 'italic',
+                  lineHeight: 1.5
+                }}>
+                  {answer || "Click 'Start Recording' below and start speaking..."}
+                </div>
+                
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                  <button 
+                    type="button"
+                    onClick={toggleListening}
+                    className="btn"
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 20,
+                      fontWeight: 700,
+                      fontSize: 12.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: isListening ? 'rgba(244, 63, 94, 0.15)' : 'rgba(0, 201, 167, 0.15)',
+                      border: isListening ? '1px solid #f43f5e' : '1px solid #00c9a7',
+                      color: isListening ? '#f43f5e' : '#00c9a7',
+                      boxShadow: isListening ? '0 0 12px rgba(244, 63, 94, 0.3)' : '0 0 12px rgba(0, 201, 167, 0.2)',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    {isListening ? 'Stop Recording' : 'Start Recording'}
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 

@@ -53,6 +53,7 @@ export default function InterviewPrep({ resumeData, prefillData, onClearPrefill 
           company={company}
           role={role}
           jobDescription={jobDescription}
+          resumeData={resumeData}
           onClose={() => setSimActive(false)}
         />
       </div>

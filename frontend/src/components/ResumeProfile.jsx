@@ -5,7 +5,7 @@ import {
   Upload, FileText, Sparkles, CheckCircle, XCircle,
   Brain, TrendingUp, Target, ArrowRight, Globe, Copy, Check,
   Briefcase, Star, Lightbulb, ExternalLink,
-  ListChecks, Award, Bookmark, ShieldAlert, Download, Printer
+  ListChecks, Award, Bookmark, ShieldAlert, Download, Printer, Zap
 } from 'lucide-react';
 
 const fallbackBrand = {

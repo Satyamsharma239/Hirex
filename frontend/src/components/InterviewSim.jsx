@@ -492,59 +492,114 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
           const col = r.score >= 80 ? '#10b981' : r.score >= 60 ? '#f59e0b' : '#f43f5e';
           const qType = s.question?.type || 'Technical';
           return (
-            <div key={i} className="glass-card" style={{ overflow: 'hidden', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border-glass)', background: 'rgba(255, 255, 255, 0.01)' }}>
+            <div key={i} className="glass-card" style={{ overflow: 'hidden', marginBottom: 18, border: '1px solid var(--border-glass)' }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between', 
+                padding: '14px 18px', 
+                borderBottom: '1px solid var(--border-glass)', 
+                background: 'rgba(255, 255, 255, 0.02)',
+                flexWrap: 'wrap',
+                gap: 10
+              }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: `${TYPE_COLORS[qType] || '#64748b'}15`, color: TYPE_COLORS[qType] || '#64748b' }}>{qType}</span>
-                  <span style={{ fontSize: 13.5, color: 'var(--text-1)', fontWeight: 600 }}>Q{i + 1}: {s.question?.question?.slice(0, 60)}...</span>
+                  <span style={{ 
+                    fontSize: 10.5, 
+                    fontWeight: 800, 
+                    padding: '3px 9px', 
+                    borderRadius: 6, 
+                    background: `${TYPE_COLORS[qType] || '#64748b'}15`, 
+                    color: TYPE_COLORS[qType] || '#64748b',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {qType}
+                  </span>
+                  <span style={{ fontSize: 14, color: 'var(--text-1)', fontWeight: 700 }}>
+                    Question {i + 1}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ fontSize: 18, fontWeight: 900, color: col }}>{r.score || 0}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${col}12`, padding: '4px 12px', borderRadius: 20, border: `1px solid ${col}25` }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-2)', fontWeight: 600 }}>Score:</span>
+                  <span style={{ fontSize: 16, fontWeight: 900, color: col }}>{r.score || 0}</span>
                   <span style={{ fontSize: 11, color: 'var(--text-3)' }}>/100</span>
                 </div>
               </div>
-              <div style={{ padding: '12px 16px' }}>
-                {r.strengths?.length > 0 && (
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.5px' }}>✅ STRENGTHS</span>
-                    {r.strengths.map((st, j) => <p key={j} style={{ fontSize: 12.5, color: 'var(--text-2)', margin: '3px 0' }}>• {st}</p>)}
+              
+              <div style={{ padding: '18px' }}>
+                <div style={{ marginBottom: 16 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px', display: 'block', marginBottom: 5 }}>QUESTION</span>
+                  <p style={{ fontSize: 14.5, color: 'var(--text-1)', fontWeight: 600, margin: 0, lineHeight: 1.5 }}>
+                    {s.question?.question}
+                  </p>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+                  <div style={{ padding: '14px', background: 'rgba(255,255,255,0.015)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--text-2)', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>📝 YOUR RESPONSE</span>
+                    <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0, lineHeight: 1.55, fontStyle: s.answer ? 'normal' : 'italic' }}>
+                      {s.answer ? `"${s.answer}"` : 'No response provided.'}
+                    </p>
                   </div>
-                )}
-                {r.improvements?.length > 0 && (
-                  <div style={{ marginBottom: 8 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.5px' }}>⚡ IMPROVE</span>
-                    {r.improvements.map((im, j) => <p key={j} style={{ fontSize: 12.5, color: 'var(--text-2)', margin: '3px 0' }}>• {im}</p>)}
-                  </div>
-                )}
-                 {r.sampleAnswer && (
-                  <div style={{ padding: '10px 14px', background: 'rgba(0,201,167,0.05)', borderRadius: 8, border: '1px solid var(--border-teal)' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--teal)', display: 'block', marginBottom: 5 }}>💡 SAMPLE ANSWER</span>
-                    <p style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.6 }}>{r.sampleAnswer}</p>
-                  </div>
-                )}
+
+                  {r.sampleAnswer && (
+                    <div style={{ padding: '14px', background: 'rgba(0,201,167,0.03)', borderRadius: 10, border: '1px solid var(--border-teal-glass)' }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--teal)', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>💡 OPTIMAL ANSWER</span>
+                      <p style={{ fontSize: 13, color: 'var(--text-2)', margin: 0, lineHeight: 1.55 }}>
+                        {r.sampleAnswer}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 16 }}>
+                  {r.strengths?.length > 0 && (
+                    <div style={{ padding: '12px 14px', background: 'rgba(16,185,129,0.03)', border: '1px solid rgba(16,185,129,0.15)', borderRadius: 10 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: '#10b981', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>✅ STRENGTHS</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {r.strengths.map((st, j) => <p key={j} style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.4 }}>• {st}</p>)}
+                      </div>
+                    </div>
+                  )}
+
+                  {r.improvements?.length > 0 && (
+                    <div style={{ padding: '12px 14px', background: 'rgba(245,158,11,0.03)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: 10 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: '#f59e0b', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>⚡ AREAS OF IMPROVEMENT</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {r.improvements.map((im, j) => <p key={j} style={{ fontSize: 12.5, color: 'var(--text-2)', margin: 0, lineHeight: 1.4 }}>• {im}</p>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 {r.deliveryAnalytics && (
-                  <div style={{ marginTop: 10, padding: '10px 14px', background: 'rgba(59,130,246,0.04)', borderRadius: 8, border: '1px solid rgba(59,130,246,0.15)' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#3b82f6', display: 'block', marginBottom: 6, letterSpacing: '0.5px', textTransform: 'uppercase' }}>🎙️ Speech Delivery Analytics</span>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div style={{ padding: '12px 14px', background: 'rgba(59,130,246,0.03)', borderRadius: 10, border: '1px solid rgba(59,130,246,0.12)' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#3b82f6', display: 'block', marginBottom: 8, letterSpacing: '0.5px', textTransform: 'uppercase' }}>🎙️ Speech & Delivery Metrics</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12 }}>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Pacing / Speed</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 750, color: 'var(--text-1)', marginTop: 2 }}>{r.deliveryAnalytics.speakingSpeed}</div>
+                        <div style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-1)', marginTop: 2 }}>{r.deliveryAnalytics.speakingSpeed}</div>
                       </div>
                       <div>
                         <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Tone / Confidence</div>
-                        <div style={{ fontSize: 12.5, fontWeight: 750, color: 'var(--text-1)', marginTop: 2 }}>{r.deliveryAnalytics.communicationTone}</div>
+                        <div style={{ fontSize: 13, fontWeight: 750, color: 'var(--text-1)', marginTop: 2 }}>{r.deliveryAnalytics.communicationTone}</div>
                       </div>
+                      {r.deliveryAnalytics.fillerCount !== undefined && (
+                        <div>
+                          <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Filler Words</div>
+                          <div style={{ fontSize: 13, fontWeight: 750, color: r.deliveryAnalytics.fillerCount > 0 ? 'var(--rose)' : '#10b981', marginTop: 2 }}>
+                            {r.deliveryAnalytics.fillerCount} {r.deliveryAnalytics.fillerCount > 0 ? `(${r.deliveryAnalytics.fillersUsed?.join(', ')})` : '(None)'}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    {r.deliveryAnalytics.fillerCount > 0 && (
-                      <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--text-2)' }}>
-                        Filler words detected: <strong style={{ color: 'var(--rose)' }}>{r.deliveryAnalytics.fillerCount}</strong> ({r.deliveryAnalytics.fillersUsed?.join(', ')})
-                      </div>
-                    )}
                   </div>
                 )}
+
                 {recordings[i] && (
-                  <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, border: '1px solid var(--border)' }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--teal)', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>📹 PLAYBACK YOUR VIDEO RESPONSE</span>
+                  <div style={{ marginTop: 14, padding: '12px 14px', background: 'rgba(255,255,255,0.01)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: 'var(--teal)', display: 'block', marginBottom: 6, letterSpacing: '0.5px' }}>📹 PLAYBACK YOUR VIDEO RESPONSE</span>
                     <video src={recordings[i]} controls style={{ width: '100%', maxHeight: 180, borderRadius: 6, background: '#000' }} />
                   </div>
                 )}

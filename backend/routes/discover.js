@@ -1,5 +1,6 @@
 const express = require('express');
 const router  = express.Router();
+const fetch   = require('node-fetch');
 const JOBS_DATABASE = require('../data/jobsDatabase');
 const { generate } = require('../services/geminiService');
 
@@ -70,6 +71,87 @@ Return ONLY the valid JSON array of ${count} items. No markdown, no explanations
 // ════════════════════════════════════════════════════════════════
 // POST /api/discover/jobs  — returns 30 jobs via 2 parallel calls
 // ════════════════════════════════════════════════════════════════
+const LOGO_COLORS = ['#00c9a7', '#3b82f6', '#8b5cf6', '#f59e0b', '#f43f5e', '#10b981', '#06b6d4'];
+function getRandomColor() {
+  return LOGO_COLORS[Math.floor(Math.random() * LOGO_COLORS.length)];
+}
+
+async function fetchAdzunaJobs(role, location, page = 1) {
+  const appId = process.env.ADZUNA_APP_ID;
+  const appKey = process.env.ADZUNA_APP_KEY;
+
+  if (!appId || appId === 'your_adzuna_app_id' || !appKey || appKey === 'your_adzuna_app_key') {
+    throw new Error('Adzuna credentials not configured');
+  }
+
+  const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?app_id=${appId}&app_key=${appKey}&results_per_page=15&what=${encodeURIComponent(role)}&where=${encodeURIComponent(location)}`;
+  
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Adzuna API returned status ${res.status}`);
+  }
+
+  const data = await res.json();
+  const results = data.results || [];
+
+  return results.map(j => {
+    const companyName = j.company?.display_name || "Target Company";
+    
+    let salaryText = "6 - 12 LPA";
+    if (j.salary_min) {
+      const minLpa = Math.round(j.salary_min / 100000);
+      const maxLpa = j.salary_max ? Math.round(j.salary_max / 100000) : Math.round((j.salary_min * 1.5) / 100000);
+      if (minLpa > 0) {
+        salaryText = `${minLpa} - ${maxLpa} LPA`;
+      }
+    }
+
+    let cleanDesc = (j.description || "")
+      .replace(/<\/?[^>]+(>|$)/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (cleanDesc.length > 250) {
+      cleanDesc = cleanDesc.slice(0, 247) + "...";
+    }
+
+    const tags = [role.split(' ')[0], "Openings", "India"].filter(Boolean);
+
+    return {
+      id: String(j.id),
+      title: j.title.replace(/<\/?[^>]+(>|$)/g, "").trim(),
+      company: companyName,
+      companyType: "Product / Tech Company",
+      hrEmail: `careers@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`,
+      logo: companyName.substring(0, 2).toUpperCase(),
+      logoColor: getRandomColor(),
+      location: j.location?.display_name || location || "India",
+      mode: j.contract_time === "contract" ? "Contract" : "Full-time",
+      type: j.contract_time === "contract" ? "Contract" : "Full-time",
+      salary: salaryText,
+      experience: "2-4 years",
+      posted: "1 day ago",
+      deadline: "Soon",
+      openings: 2,
+      description: cleanDesc || `Exciting opportunity for a ${role} at ${companyName}.`,
+      responsibilities: [
+        "Develop high-quality features and clean code.",
+        "Collaborate with engineering teams to resolve architecture blocks.",
+        "Ensure performance tuning and unit test compliance."
+      ],
+      requirements: [
+        "Strong knowledge of modern software development practices.",
+        "Hands-on experience with the target technology stack.",
+        "Good communication and collaborative problem-solving skills."
+      ],
+      niceToHave: ["Familiarity with cloud hosting (AWS/GCP).", "Prior experience working in agile environments."],
+      benefits: ["Flexible working hours", "Competitive compensation", "Health insurance benefits"],
+      matchScore: Math.floor(Math.random() * 20) + 78,
+      matchReason: `High demand for ${role} skills at ${companyName}.`,
+      tags: tags
+    };
+  });
+}
+
 router.post('/jobs', async (req, res) => {
   try {
     const { role = '', location = 'Bangalore', skills = [], experience = 'Fresher', page = 1 } = req.body;
@@ -82,25 +164,40 @@ router.post('/jobs', async (req, res) => {
 
     let jobs = [];
 
-    // Try fetching from Gemini
     try {
-      const pageSize = 20;
-      const batchSize = 10;
-      console.log(`[/jobs] Page ${page} — fetching ${pageSize} jobs in parallel for role: ${role}`);
-      const [result1, result2] = await Promise.all([
-        generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
-        generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
-      ]);
-      jobs = [...toArr(result1), ...toArr(result2)];
-    } catch (apiErr) {
-      console.warn('⚠️ [Gemini API Error] Falling back to local static database:', apiErr.message);
+      jobs = await fetchAdzunaJobs(role, location, page);
+      console.log(`[/jobs] Fetched ${jobs.length} real-time vacancies from Adzuna API.`);
+    } catch (adzunaErr) {
+      console.log('⚠️ [Adzuna API Error/Not Configured]:', adzunaErr.message);
     }
 
-    // Fallback: search and customize local static database
     if (jobs.length === 0) {
+      try {
+        const pageSize = 20;
+        const batchSize = 10;
+        console.log(`[/jobs] Fetching from Gemini API for role: ${role}`);
+        const [result1, result2] = await Promise.all([
+          generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
+          generate({ prompt: buildJobPrompt(role, location, experience, skillStr, batchSize), temperature: 0.9, maxOutputTokens: 8192 }),
+        ]);
+        
+        const gJobs = [...toArr(result1), ...toArr(result2)];
+        const isFallback = gJobs.length > 0 && gJobs.some(j => j.id === 'job-fallback-1');
+        
+        if (isFallback) {
+          console.log('⚠️ [Gemini fallback detected] Bypassing fallback card and using local database.');
+        } else {
+          jobs = gJobs;
+        }
+      } catch (apiErr) {
+        console.warn('⚠️ [Gemini API Error]:', apiErr.message);
+      }
+    }
+
+    if (jobs.length === 0) {
+      console.log('🌱 Searching local static database (JOBS_DATABASE) for role:', role);
       const searchTerms = role.toLowerCase().split(/\s+/).filter(t => t.length > 2);
       
-      // Filter database by search terms matching title, description or tags
       let filteredLocalJobs = JOBS_DATABASE.filter(j => {
         const title = j.title.toLowerCase();
         const desc = j.description.toLowerCase();
@@ -108,16 +205,13 @@ router.post('/jobs', async (req, res) => {
         return searchTerms.some(term => title.includes(term) || desc.includes(term) || tags.includes(term));
       });
 
-      // If no matching jobs found locally, fall back to our entire database
       if (filteredLocalJobs.length === 0) {
         filteredLocalJobs = JOBS_DATABASE;
       }
 
-      // Customize local jobs to match user location and experience level dynamically
       jobs = filteredLocalJobs.map((j, index) => ({
         ...j,
         id: `${j.id}-customized-${index}-${Math.floor(Math.random()*1000)}`,
-        // Dynamic customization to match searched parameters
         title: j.title.toLowerCase().includes(role.toLowerCase()) ? j.title : `${role}`,
         location: location || j.location,
         experience: experience || j.experience,
@@ -125,7 +219,6 @@ router.post('/jobs', async (req, res) => {
       }));
     }
 
-    // We allow up to 3 pages for the infinite scroll illusion
     const hasMore = page < 3;
     const out = { jobs, total: jobs.length, role, location, page, hasMore };
     if (jobs.length > 5) setCache(cacheKey, out);

@@ -7,7 +7,7 @@ import {
   Search, MapPin, Briefcase, Clock, Users, Mail,
   RefreshCw, X, BookmarkPlus, Bookmark, Zap, Filter,
   CheckCircle2, Send, Copy, Check, User,
-  ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost, Bell
+  ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost, Bell, ExternalLink
 } from 'lucide-react';
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -366,14 +366,20 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
         </span>
       </div>
 
-      {/* Buttons */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-        <button onClick={() => onOutreach(job)} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, padding: '10px' }}>
-          <Send size={14} /> Outreach
-        </button>
-        <button onClick={() => onSimulate(job)} className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, padding: '10px' }}>
-          <User size={14} /> Simulate Interview
-        </button>
+        {job.applicationLink && (
+          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <ExternalLink size={14} /> Apply Now
+          </a>
+        )}
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
+            <Send size={13} /> Outreach
+          </button>
+          <button onClick={() => onSimulate(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
+            <User size={13} /> Interview
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -626,10 +632,14 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
         )}
       </div>
 
-      {/* Fixed bottom actions */}
       <div style={{ padding:'12px 18px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:8 }}>
+        {job.applicationLink && (
+          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <ExternalLink size={14} /> Apply to Original Post
+          </a>
+        )}
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={handleSave} disabled={saving} className="btn btn-primary" style={{ flex:1 }}>
+          <button onClick={handleSave} disabled={saving} className="btn btn-ghost" style={{ flex:1 }}>
             {saving ? <><div className="spinner" />Adding...</> : <><BookmarkPlus size={13} />Add to Tracker</>}
           </button>
           <button onClick={() => onGhostRate(job)} className="btn btn-ghost" style={{ flex:1 }}>

@@ -132,6 +132,28 @@ function getRelativeTime(dateStr) {
   return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
 }
 
+function parseRelativeDate(postedText) {
+  if (!postedText) return Date.now();
+  const text = postedText.toLowerCase();
+  if (text.includes('hour')) {
+    const hours = parseInt(text.match(/\d+/) || [1]);
+    return Date.now() - hours * 60 * 60 * 1000;
+  }
+  if (text.includes('day')) {
+    const days = parseInt(text.match(/\d+/) || [1]);
+    return Date.now() - days * 24 * 60 * 60 * 1000;
+  }
+  if (text.includes('week')) {
+    const weeks = parseInt(text.match(/\d+/) || [1]);
+    return Date.now() - weeks * 7 * 24 * 60 * 60 * 1000;
+  }
+  if (text.includes('month')) {
+    const months = parseInt(text.match(/\d+/) || [1]);
+    return Date.now() - months * 30 * 24 * 60 * 60 * 1000;
+  }
+  return Date.now();
+}
+
 async function resolveRedirect(url) {
   try {
     const res = await fetch(url, {
@@ -266,6 +288,7 @@ async function fetchSerpApiJobs(role, location, experience, page = 1) {
         salary: "Competitive Salary",
         experience: inferExperience(j.title || role, j.description || '', experience),
         posted: j.detected_extensions?.posted_at || "Today",
+        createdTime: parseRelativeDate(j.detected_extensions?.posted_at),
         deadline: "Soon",
         openings: 1,
         description: j.description || `Exciting opportunity for a ${role} at ${companyName}.`,
@@ -395,6 +418,7 @@ async function fetchAdzunaJobs(role, location, experience, page = 1) {
       salary: salaryText,
       experience: inferExperience(j.title, j.description || '', experience),
       posted: getRelativeTime(j.created),
+      createdTime: j.created ? new Date(j.created).getTime() : Date.now(),
       deadline: "Soon",
       openings: 2,
       description: cleanDesc || `Exciting opportunity for a ${role} at ${companyName}.`,
@@ -498,6 +522,7 @@ async function fetchHimalayasJobs(role, location, experience, page = 1) {
         salary: salaryText,
         experience: inferExperience(j.title || role, (j.description || '') + ' ' + (j.seniority || []).join(' '), experience),
         posted: getRelativeTime(j.pubDate ? j.pubDate * 1000 : null),
+        createdTime: j.pubDate ? j.pubDate * 1000 : Date.now(),
         deadline: "Open until filled",
         openings: 1,
         description: cleanDesc,
@@ -582,6 +607,7 @@ async function fetchArbeitnowJobs(role, location, experience, page = 1) {
         salary: "Competitive Salary",
         experience: inferExperience(j.title || role, j.description || '', experience),
         posted: getRelativeTime(j.created_at),
+        createdTime: j.created_at ? new Date(j.created_at).getTime() : Date.now(),
         deadline: "Open",
         openings: 1,
         description: cleanDesc,
@@ -651,6 +677,7 @@ async function fetchRemotiveJobs(role, location, experience, page = 1) {
         salary: j.salary || "Competitive Salary",
         experience: inferExperience(j.title || role, j.description || '', experience),
         posted: getRelativeTime(j.publication_date),
+        createdTime: j.publication_date ? new Date(j.publication_date).getTime() : Date.now(),
         deadline: "Open",
         openings: 1,
         description: cleanDesc,
@@ -747,9 +774,11 @@ router.post('/jobs', async (req, res) => {
         location: location || j.location,
         experience: experience || j.experience,
         posted: `${index + 1} day${index === 0 ? '' : 's'} ago`,
+        createdTime: Date.now() - (index + 1) * 24 * 60 * 60 * 1000,
       }));
     }
 
+    jobs.sort((a, b) => (b.createdTime || 0) - (a.createdTime || 0));
     jobs = jobs.map(j => scrubAdzuna(j));
     const hasMore = page < 3;
     const out = { jobs, total: jobs.length, role, location, page, hasMore };

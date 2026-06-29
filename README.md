@@ -2,6 +2,8 @@
 
 HireX is an enterprise-grade SaaS platform built for modern job seekers to bypass traditional application systems. Instead of clicking "Easy Apply" and falling into black holes, HireX empowers candidates with direct cold-outreach automation, resume tailoring, and simulation tools.
 
+🌐 **Live Demo:** [https://hirex-9g9p.onrender.com](https://hirex-9g9p.onrender.com)
+
 ---
 
 ## 🌟 Elite Features

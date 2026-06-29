@@ -38,69 +38,178 @@ async function generate(options = {}) {
 
   const fullPrompt = prompt || (systemPrompt ? `${systemPrompt}\n\n${userPrompt}` : userPrompt);
 
-  let apiKey;
   try {
-    apiKey = getApiKey();
-  } catch (err) {
-    console.warn(`⚠️ [Gemini API Key missing or invalid]: ${err.message}. Activating local dynamic AI mock fallback.`);
-    return getFallbackMock(fullPrompt);
-  }
-  
-  const genAI = new GoogleGenerativeAI(apiKey);
-
-  const config = {
-    temperature,
-    maxOutputTokens,
-  };
-
-  if (jsonMode) {
-    config.responseMimeType = 'application/json';
-  }
-
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    generationConfig: config,
-  });
-
-  for (let attempt = 1; attempt <= retries; attempt++) {
+    let apiKey;
     try {
-      const responseWrapper = await model.generateContent(fullPrompt);
-      const text = responseWrapper.response.text().trim();
-      
-      if (!text) {
-        throw new Error('Received empty response from the AI model');
-      }
-
-      if (!jsonMode) {
-        return text;
-      }
-
-      // Try raw parse
-      try {
-        return JSON.parse(text);
-      } catch (jsonErr) {
-        // Strip markdown blocks if present and retry
-        const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```\s*$/, '').trim();
-        try {
-          return JSON.parse(cleaned);
-        } catch {
-          // Last resort search for JSON bounds
-          const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/s);
-          if (match) {
-            return JSON.parse(match[1]);
-          }
-          throw new Error('AI response structure did not conform to valid JSON format');
-        }
-      }
-    } catch (error) {
-      console.error(`⚠️ [Gemini API Attempt ${attempt}/${retries} failed]: ${error.message}`);
-      if (attempt === retries) {
-        console.warn(`⚠️ [Gemini API quota exceeded or failed. Activating local dynamic AI mock fallback]: ${error.message}`);
-        return getFallbackMock(fullPrompt);
-      }
-      // Progressive delay (1s, 2s, 3s...)
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      apiKey = getApiKey();
+    } catch (err) {
+      console.warn(`⚠️ [Gemini API Key missing or invalid]: ${err.message}. Activating local dynamic AI mock fallback.`);
+      return getFallbackMock(fullPrompt);
     }
+    
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    const config = {
+      temperature,
+      maxOutputTokens,
+    };
+
+    if (jsonMode) {
+      config.responseMimeType = 'application/json';
+    }
+
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      generationConfig: config,
+    });
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const responseWrapper = await model.generateContent(fullPrompt);
+        const text = responseWrapper.response.text().trim();
+        
+        if (!text) {
+          throw new Error('Received empty response from the AI model');
+        }
+
+        if (!jsonMode) {
+          return text;
+        }
+
+        try {
+          return JSON.parse(text);
+        } catch (jsonErr) {
+          const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```\s*$/, '').trim();
+          try {
+            return JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/(\{[\s\S]*\}|\[[\s\S]*\])/s);
+            if (match) {
+              return JSON.parse(match[1]);
+            }
+            throw new Error('AI response structure did not conform to valid JSON format');
+          }
+        }
+      } catch (error) {
+        console.error(`⚠️ [Gemini API Attempt ${attempt}/${retries} failed]: ${error.message}`);
+        if (attempt === retries) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  } catch (err) {
+    console.warn('Gemini API failed, using offline fallback:', err.message);
+
+    const p = fullPrompt.toLowerCase();
+
+    if (p.includes('interview') && p.includes('question')) {
+      return [
+        { index: 0, type: 'Technical', question: 'Explain the difference between var, let, and const in JavaScript.', timeLimit: 120, hint: 'Focus on scope, hoisting, and reassignment rules.' },
+        { index: 1, type: 'Technical', question: 'What is the virtual DOM and how does React use it to optimize rendering?', timeLimit: 120, hint: 'Discuss diffing algorithm and reconciliation.' },
+        { index: 2, type: 'Technical', question: 'Describe how RESTful APIs work and the main HTTP methods used.', timeLimit: 120, hint: 'Cover GET, POST, PUT, DELETE and status codes.' },
+        { index: 3, type: 'Behavioral', question: 'Tell me about a challenging project you worked on and how you overcame obstacles.', timeLimit: 120, hint: 'Use the STAR method to structure your response.' },
+        { index: 4, type: 'Behavioral', question: 'How do you prioritize tasks when working on multiple features simultaneously?', timeLimit: 120, hint: 'Mention tools, communication, and time management strategies.' },
+        { index: 5, type: 'Situational', question: 'If a production bug is reported during off-hours, how would you handle it?', timeLimit: 120, hint: 'Discuss severity assessment, communication, and incident response.' },
+        { index: 6, type: 'Technical', question: 'What are closures in JavaScript and can you give a practical example?', timeLimit: 120, hint: 'Explain lexical scoping and data encapsulation use cases.' },
+        { index: 7, type: 'HR', question: 'Where do you see yourself professionally in the next three years?', timeLimit: 120, hint: 'Show ambition while aligning with the company growth trajectory.' }
+      ];
+    }
+
+    if (p.includes('score') && p.includes('answer')) {
+      return {
+        score: 72,
+        grade: 'B',
+        strengths: ['Clear communication', 'Relevant experience mentioned'],
+        improvements: ['Add more specific metrics', 'Use STAR method structure'],
+        sampleAnswer: 'A strong answer would include specific examples with measurable outcomes...',
+        keyMissed: 'Quantifiable results',
+        confidence: 'Medium',
+        deliveryAnalytics: {
+          speakingSpeed: '120 WPM (Normal)',
+          fillerCount: 1,
+          fillersUsed: ['um'],
+          communicationTone: 'Conversational'
+        },
+        starBreakdown: {
+          situation: { score: 15, feedback: 'Context was partially set' },
+          task: { score: 18, feedback: 'Role was explained clearly' },
+          action: { score: 12, feedback: 'More specific actions needed' },
+          result: { score: 10, feedback: 'Missing quantifiable outcomes' }
+        }
+      };
+    }
+
+    if (p.includes('career') && p.includes('dna')) {
+      return {
+        careerPersonality: 'The Builder',
+        careerPersonalityDesc: 'You thrive on turning ideas into working software products.',
+        overallStrength: 'Strong full-stack development fundamentals.',
+        readinessLevel: 'Job-Ready',
+        topSkills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Express'],
+        skillGaps: ['TypeScript', 'Docker', 'Cloud Services'],
+        recommendedRoles: [
+          { title: 'Full Stack Developer', fit: 90, reason: 'Strong alignment with your project experience.', avgSalary: '5-8 LPA', demandLevel: 'High', growthPath: 'Senior Engineer' },
+          { title: 'Frontend Engineer', fit: 85, reason: 'Solid React and UI development skills.', avgSalary: '4-7 LPA', demandLevel: 'High', growthPath: 'Frontend Architect' }
+        ],
+        topIndustries: ['SaaS', 'FinTech', 'E-Commerce'],
+        careerAdvice: 'Continue building projects and start learning TypeScript to increase market value.',
+        oneThingToLearnNow: 'TypeScript',
+        timeToHire: '3-5 weeks',
+        confidence: 'Your portfolio demonstrates strong practical skills.'
+      };
+    }
+
+    if (p.includes('ats') || p.includes('audit')) {
+      return {
+        atsScore: 78,
+        atsGrade: 'B+',
+        recruiterSummary: 'The resume demonstrates solid technical foundations with room for keyword optimization.',
+        formattingAudits: [
+          { rule: 'Avoid tables & columns', status: 'Pass', reason: 'Clean single-column layout detected.' },
+          { rule: 'Standard section headers', status: 'Pass', reason: 'Headers follow conventional naming.' },
+          { rule: 'Contact details location', status: 'Pass', reason: 'Contact info placed at the top.' }
+        ],
+        keywordDensity: [
+          { keyword: 'JavaScript', present: true, count: 4 },
+          { keyword: 'React', present: true, count: 3 },
+          { keyword: 'Node.js', present: true, count: 2 },
+          { keyword: 'TypeScript', present: false, count: 0 }
+        ],
+        rewrittenSummary: 'Results-driven developer with hands-on experience building scalable web applications.',
+        suitedRoles: [
+          { title: 'Frontend Developer', fit: 88, reason: 'Strong React and JavaScript skills.' },
+          { title: 'Full Stack Developer', fit: 82, reason: 'Experience across frontend and backend.' }
+        ]
+      };
+    }
+
+    if (p.includes('outreach') || p.includes('email')) {
+      return {
+        subject: 'Application for Open Developer Position',
+        body: 'Hi Team,\n\nI am a software developer with experience building web applications using modern JavaScript frameworks. I came across your open position and believe my skills would be a strong fit.\n\nI have attached my resume for your review and would welcome the opportunity to discuss how I can contribute to your team.\n\nBest regards',
+        tips: [
+          'Personalize the greeting with the hiring manager name.',
+          'Send on Tuesday or Wednesday morning for best response rates.',
+          'Include a link to your portfolio or GitHub profile.'
+        ]
+      };
+    }
+
+    if (p.includes('career') && p.includes('card')) {
+      return {
+        headline: 'Software Developer | JavaScript · React · Node.js | Open to Work',
+        tagline: 'Building scalable web solutions with modern technologies.',
+        topSkills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'Express'],
+        uniqueValue: 'Full-stack developer focused on performance optimization and clean architecture.',
+        lookingFor: 'Developer roles in growth-focused tech companies.',
+        availableFrom: 'Immediately',
+        preferredLocations: ['Remote', 'Bangalore', 'Mumbai'],
+        openToRemote: true
+      };
+    }
+
+    return { message: 'AI service temporarily unavailable. Please try again.' };
   }
 }
 
@@ -475,6 +584,12 @@ function getFallbackMock(promptText) {
         "fillerCount": Math.max(0, Math.floor(wordCount / 20) - 1),
         "fillersUsed": ["like"],
         "communicationTone": score >= 75 ? "Confident & Technical" : "Conversational"
+      },
+      "starBreakdown": {
+        "situation": { "score": score >= 70 ? 20 : 12, "feedback": score >= 70 ? "Context was well established" : "Context was vague" },
+        "task": { "score": score >= 70 ? 22 : 15, "feedback": "Task role was clear" },
+        "action": { "score": score >= 70 ? 21 : 14, "feedback": score >= 70 ? "Specific actions taken were detailed" : "Actions lacked technical depth" },
+        "result": { "score": score >= 70 ? 18 : 10, "feedback": score >= 70 ? "Good measurable outcomes" : "Missing quantifiable results" }
       }
     };
   }

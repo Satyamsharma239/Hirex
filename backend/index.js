@@ -239,7 +239,7 @@ app.use('/api/profile',  require('./routes/profile'));
 
 const path = require('path');
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.get('*', (req, res) => {
+app.get('(.*)', (req, res) => {
   if (req.originalUrl.startsWith('/api')) {
     return res.status(404).json({ error: 'Endpoint not found' });
   }

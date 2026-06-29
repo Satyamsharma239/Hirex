@@ -252,11 +252,21 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
           targetRole: 'Software Developer'
         });
         nextBrand = res.data;
-        if (nextBrand) nextBrand.name = verifyContact.name;
+        if (nextBrand) {
+          nextBrand.name = verifyContact.name;
+          nextBrand.email = verifyContact.email;
+          nextBrand.phone = verifyContact.phone;
+          nextBrand.linkedin = verifyContact.linkedin;
+          nextBrand.github = verifyContact.github;
+        }
       } catch (err) {
         console.warn('Brand card generation failed, using fallback:', err);
         nextBrand = {
           name: verifyContact.name,
+          email: verifyContact.email,
+          phone: verifyContact.phone,
+          linkedin: verifyContact.linkedin,
+          github: verifyContact.github,
           headline: `${(uploadedData && uploadedData.skillsPresent && uploadedData.skillsPresent.slice(0, 3).join(' · ')) || 'MERN Stack Developer'} | Open to Work`,
           tagline: "Building scalable web solutions with modern JavaScript frameworks.",
           topSkills: (uploadedData && uploadedData.skillsPresent && uploadedData.skillsPresent.slice(0, 5)) || ["React", "Node.js", "Express", "MongoDB", "JavaScript"],
@@ -421,13 +431,18 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
     if (!activeBrand) return;
     setPublishing(true);
     try {
-      const username = (activeBrand.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
+      let username;
+      if (publishedUrl) {
+        username = publishedUrl.split('/u/')[1];
+      } else {
+        username = (activeBrand.name || 'user').toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 1000);
+      }
       const payload = { ...activeBrand, username };
       const { data } = await profileAPI.createOrUpdate(payload);
       const url = `/u/${data.username}`;
       setPublishedUrl(url);
       localStorage.setItem('hirex_published_url', url);
-      toast.success('Hosted Portfolio published live! 🌐');
+      toast.success(publishedUrl ? 'Hosted Portfolio updated! 🌐' : 'Hosted Portfolio published live! 🌐');
     } catch (e) {
       toast.error('Failed to publish profile page');
     }
@@ -560,9 +575,14 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               {publishedUrl ? (
-                <button onClick={copyLink} className="btn btn-ghost" style={{ gap: 6, fontSize: 13 }}>
-                  <Copy size={14} /> Copy Portfolio Link
-                </button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={handlePublish} disabled={publishing} className="btn btn-ghost" style={{ gap: 6, fontSize: 13 }}>
+                    {publishing ? 'Updating...' : 'Update Live Page'}
+                  </button>
+                  <button onClick={copyLink} className="btn btn-ghost" style={{ gap: 6, fontSize: 13 }}>
+                    <Copy size={14} /> Copy Portfolio Link
+                  </button>
+                </div>
               ) : (
                 <button onClick={handlePublish} disabled={publishing} className="btn btn-ghost" style={{ gap: 6, fontSize: 13 }}>
                   {publishing ? 'Publishing...' : 'Publish Portfolio'}

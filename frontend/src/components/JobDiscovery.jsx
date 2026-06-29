@@ -109,31 +109,69 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
   const [companyName, setCompanyName] = useState(job.company || '');
   const [recruiter, setRecruiter]     = useState('Sarah Chen');
   const [roleJobId, setRoleJobId]     = useState(`${job.title} | ID #${job.id || '77123'}`);
+  const [hrEmail, setHrEmail]         = useState(job.hrEmail || '');
   const [pitchText, setPitchText]     = useState('');
   const [loading, setLoading]         = useState(true);
   const [editMode, setEditMode]       = useState(false);
 
   useEffect(() => {
-    generateEmail();
+    const init = async () => {
+      let activeRecruiter = 'Sarah Chen';
+      try {
+        const { data } = await discoverAPI.findHrEmail({ company: companyName });
+        if (data.email) {
+          setHrEmail(data.email);
+        }
+        if (data.recruiterName) {
+          setRecruiter(data.recruiterName);
+          activeRecruiter = data.recruiterName;
+        }
+      } catch (err) {}
+      generateEmail(activeRecruiter);
+    };
+    init();
   }, []);
 
-  const generateEmail = async () => {
+  const generateEmail = async (currentRecruiter) => {
     setLoading(true);
+    let name = resumeData?.name || userProfile?.name;
+    let email = resumeData?.email || userProfile?.email;
+    if (!name || name === 'Alex Jensen' || name === 'Priya Sharma') {
+      if (resumeText) {
+        const lines = resumeText.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length > 0 && lines[0].length < 40 && !lines[0].toLowerCase().includes('resume') && !lines[0].toLowerCase().includes('cv')) {
+          name = lines[0];
+        }
+      }
+    }
+    name = name || 'Satyam Sharma';
+
+    if (!email || email === 'alex@jensen.com') {
+      if (resumeText) {
+        const emailMatch = resumeText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (emailMatch) email = emailMatch[1];
+      }
+    }
+    email = email || 'satyam.sharma@email.com';
+
+    const recruiterNameForPrompt = currentRecruiter || recruiter;
+
     try {
       const { data } = await discoverAPI.getOutreachEmail({
         job: { ...job, company: companyName, title: roleJobId.split(' | ')[0] },
-        userName:            userProfile?.name       || 'Alex Jensen',
-        userEmail:           userProfile?.email      || 'alex@jensen.com',
-        userBackground:      userProfile?.background || 'Software developer',
-        userSkills:          userProfile?.skills ? userProfile.skills.split(',').map(s => s.trim()) : [],
-        resumeSkillsPresent: resumeData?.skillsPresent || [],
+        userName:            name,
+        userEmail:           email,
+        recruiterName:       recruiterNameForPrompt,
+        userBackground:      resumeData?.headline    || userProfile?.background || 'Software Developer',
+        userSkills:          resumeData?.topSkills   || (userProfile?.skills ? userProfile.skills.split(',').map(s => s.trim()) : []),
+        resumeSkillsPresent: resumeData?.topSkills   || [],
         resumeSkillsMissing: resumeData?.skillsMissing || [],
         resumeImprovement:   resumeData?.improvement  || '',
         resumeText:          resumeText || '',
       });
       setPitchText(data.body || '');
     } catch (err) {
-      setPitchText(`Subject: Connecting regarding Product Design opportunities at ${companyName}\n\nHi ${recruiter.split(' ')[0]},\n\nI hope you're having a great week!\n\nI've been following ${companyName}'s recent advancements in user-centric payment flows and was specifically impressed by the redesign of the Checkout experience. Given my 7+ years in building accessible, high-conversion design systems, I was thrilled to see the ${roleJobId.split(' | ')[0]} opening on your team.\n\nAt my previous role at Wealthfront, I led the redesign of the mobile onboarding, which resulted in a 35% increase in user activation. I admire ${companyName}'s commitment to visual excellence and technical precision. I am confident my background in crafting seamless user journeys would be a strong fit for your current goals.\n\nI would welcome the opportunity to briefly connect to discuss how my expertise aligns with ${companyName}'s product vision. Is there a good time next week for a 15-minute call?\n\nBest regards,\n\nAlex Jensen\n[Portfolio Link]\n[LinkedIn Profile]`);
+      setPitchText(`Subject: Connecting regarding ${roleJobId.split(' | ')[0]} opportunities at ${companyName}\n\nHi ${recruiterNameForPrompt.split(' ')[0]},\n\nI hope you're having a great week!\n\nI've been following ${companyName}'s work and was specifically impressed by your recent developments. Given my background, I was thrilled to see the ${roleJobId.split(' | ')[0]} opening on your team.\n\nI admire ${companyName}'s commitment to visual excellence and technical precision. I am confident my background in crafting scalable web applications would be a strong fit for your current goals.\n\nI would welcome the opportunity to briefly connect to discuss how my expertise aligns with ${companyName}'s product vision. Is there a good time next week for a 15-minute call?\n\nBest regards,\n\n${name}\n${email}\n${resumeData?.linkedin || ''}`);
     }
     setLoading(false);
   };
@@ -155,6 +193,8 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
       setRecruiter('Sarah Chen');
     } else if (field === 'role') {
       setRoleJobId(`${job.title} | ID #${job.id || '77123'}`);
+    } else if (field === 'hrEmail') {
+      setHrEmail(job.hrEmail || '');
     }
     toast.success('Auto-filled field!');
   };
@@ -181,7 +221,8 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
           {[
             { label: 'Company Name', val: companyName, setVal: setCompanyName, field: 'company' },
             { label: 'Target Recruiter', val: recruiter, setVal: setRecruiter, field: 'recruiter' },
-            { label: 'Role/Job ID', val: roleJobId, setVal: setRoleJobId, field: 'role' }
+            { label: 'Role/Job ID', val: roleJobId, setVal: setRoleJobId, field: 'role' },
+            { label: 'HR Email', val: hrEmail, setVal: setHrEmail, field: 'hrEmail' }
           ].map(f => (
             <div key={f.label} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 100px', gap: 12, alignItems: 'center' }}>
               <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>{f.label}</span>
@@ -237,14 +278,94 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
           )}
         </div>
 
-        {/* Footer actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-          <button onClick={handleLinkedInSearch} className="btn btn-primary" style={{ height: 46, background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, justifyContent: 'center', borderRadius: 10 }}>
-            Send via LinkedIn
-          </button>
-          <button onClick={copyEmail} className="btn btn-primary" style={{ height: 46, background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#060d1a', fontWeight: 800, justifyContent: 'center', borderRadius: 10 }}>
-            Copy Email
-          </button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <a
+              href={`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(companyName + ' ' + recruiter)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{
+                height: 46,
+                background: 'linear-gradient(135deg, #0077b5, #005582)',
+                color: '#fff',
+                fontWeight: 800,
+                justifyContent: 'center',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                fontSize: '12.5px',
+                width: '100%'
+              }}
+            >
+              LinkedIn Search
+            </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(companyName + ' ' + recruiter)}`);
+                toast.success('LinkedIn Search link copied! 📋');
+              }}
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: 11, padding: '4px 0', border: 'none', background: 'transparent', color: 'var(--text-3)' }}
+            >
+              📋 Copy Link
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <a
+              href={`mailto:${encodeURIComponent(hrEmail)}?subject=${encodeURIComponent(roleJobId.split(' | ')[0])}&body=${encodeURIComponent(pitchText)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+              style={{
+                height: 46,
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                color: '#fff',
+                fontWeight: 800,
+                justifyContent: 'center',
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+                fontSize: '12.5px',
+                width: '100%'
+              }}
+            >
+              Send via Email
+            </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(hrEmail);
+                toast.success('HR Email copied! 📋');
+              }}
+              className="btn btn-ghost btn-sm"
+              style={{ fontSize: 11, padding: '4px 0', border: 'none', background: 'transparent', color: 'var(--text-3)' }}
+            >
+              📋 Copy Email
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <button
+              onClick={copyEmail}
+              className="btn btn-primary"
+              style={{
+                height: 46,
+                background: 'linear-gradient(135deg, #00c9a7, #0891b2)',
+                color: '#060d1a',
+                fontWeight: 800,
+                justifyContent: 'center',
+                borderRadius: 10,
+                fontSize: '12.5px',
+                width: '100%'
+              }}
+            >
+              Copy Email
+            </button>
+            <span style={{ fontSize: 11, padding: '4px 0', color: 'var(--text-3)', textAlign: 'center' }}>
+              Full pitch text
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -368,9 +489,22 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
         {job.applicationLink && (
-          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
-            <ExternalLink size={14} /> Apply Now
-          </a>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <ExternalLink size={14} /> Apply Now
+            </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(job.applicationLink);
+                toast.success('Apply link copied! 📋');
+              }}
+              className="btn btn-ghost"
+              title="Copy Apply Link"
+              style={{ width: 42, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              📋
+            </button>
+          </div>
         )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
@@ -634,9 +768,22 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
 
       <div style={{ padding:'12px 18px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:8 }}>
         {job.applicationLink && (
-          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
-            <ExternalLink size={14} /> Apply to Original Post
-          </a>
+          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+            <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
+              <ExternalLink size={14} /> Apply to Original Post
+            </a>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(job.applicationLink);
+                toast.success('Apply link copied! 📋');
+              }}
+              className="btn btn-ghost"
+              title="Copy Apply Link"
+              style={{ width: 42, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              📋
+            </button>
+          </div>
         )}
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={handleSave} disabled={saving} className="btn btn-ghost" style={{ flex:1 }}>

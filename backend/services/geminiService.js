@@ -217,8 +217,13 @@ function getFallbackMock(promptText) {
       ]
     };
   }
+  if (p.includes('recruiter name') || p.includes('recruitername') || p.includes('hr/recruiting work email')) {
+    return {
+      "email": `careers@${company.toLowerCase().replace(/\s+/g, '')}.com`,
+      "recruiterName": "Rohan Sharma"
+    };
+  }
 
-  // 1. Outreach Email
   if (p.includes('outreach-email') || p.includes('outreach email') || p.includes('outreach_email') || p.includes('outreach') || p.includes('cold-outreach')) {
     return {
       "subject": `Application: ${role} | ${name} | React & Node.js`,

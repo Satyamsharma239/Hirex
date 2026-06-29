@@ -77,7 +77,7 @@ export default function PublicProfile() {
             {profile.uniqueValue}
           </div>
 
-          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 32 }}>
             <div style={{ flex: 1, padding: '16px 20px', background: 'rgba(0,0,0,0.25)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
               <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginBottom: 4, letterSpacing: '1px' }}>LOOKING FOR</div>
               <div style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>{profile.lookingFor}</div>
@@ -88,8 +88,29 @@ export default function PublicProfile() {
             </div>
           </div>
 
-          <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
-            <a href={`mailto:?subject=Connecting via HireX Profile&body=${encodeURIComponent(profile.coldEmailIntro || '')}`} 
+          {(profile.linkedin || profile.github) && (
+            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginBottom: 32 }}>
+              {profile.linkedin && (
+                <a href={profile.linkedin.startsWith('http') ? profile.linkedin : `https://${profile.linkedin}`} 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#60a5fa', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13 }}>
+                  LinkedIn Profile
+                </a>
+              )}
+              {profile.github && (
+                <a href={profile.github.startsWith('http') ? profile.github : `https://${profile.github}`} 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9', textDecoration: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13 }}>
+                  GitHub Profile
+                </a>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: 24, paddingTop: 24, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'center' }}>
+            <a href={`mailto:${profile.email || ''}?subject=Connecting via HireX Profile&body=${encodeURIComponent(profile.coldEmailIntro || '')}`} 
                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 24px', background: '#f472b6', color: '#fff', textDecoration: 'none', borderRadius: 12, fontWeight: 700, fontSize: 14, boxShadow: '0 8px 16px rgba(244,114,182,0.3)' }}>
               Contact Me
             </a>

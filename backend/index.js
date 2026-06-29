@@ -237,13 +237,13 @@ app.use('/api/discover', discoverRoutes);
 app.use('/api/features', featureRoutes);
 app.use('/api/profile',  require('./routes/profile'));
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
-  res.json({
-    message: 'HireX AI Backend is Alive! 🚀',
-    status: 'ok',
-    timestamp: new Date().toISOString()
-  });
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.get('*', (req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(404).json({ error: 'Endpoint not found' });
+  }
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // ─── Global Error Handler ────────────────────────────────────────────────────

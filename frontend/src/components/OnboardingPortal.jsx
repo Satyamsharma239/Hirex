@@ -173,11 +173,21 @@ June 2025 - Present | Remote, India
         targetRole: 'Software Developer'
       });
       brandData = res.data;
-      if (brandData) brandData.name = contact.name;
+      if (brandData) {
+        brandData.name = contact.name;
+        brandData.email = contact.email;
+        brandData.phone = contact.phone;
+        brandData.linkedin = contact.linkedin;
+        brandData.github = contact.github;
+      }
     } catch (err) {
       console.warn('Brand card generation failed, using optimized fallback:', err);
       brandData = {
         name: contact.name,
+        email: contact.email,
+        phone: contact.phone,
+        linkedin: contact.linkedin,
+        github: contact.github,
         headline: `${(parsedData && parsedData.skillsPresent && parsedData.skillsPresent.slice(0, 3).join(' · ')) || 'MERN Stack Developer'} | Open to Work`,
         tagline: "Building scalable web solutions with modern JavaScript frameworks.",
         topSkills: (parsedData && parsedData.skillsPresent && parsedData.skillsPresent.slice(0, 5)) || ["React", "Node.js", "Express", "MongoDB", "JavaScript"],
@@ -225,7 +235,13 @@ June 2025 - Present | Remote, India
 
     // Final complete trigger
     setTimeout(() => {
-      if (brandData) brandData.name = contact.name;
+      if (brandData) {
+        brandData.name = contact.name;
+        brandData.email = contact.email;
+        brandData.phone = contact.phone;
+        brandData.linkedin = contact.linkedin;
+        brandData.github = contact.github;
+      }
       onComplete(parsedText, brandData, dnaData, auditData);
       toast.success('Onboarding complete! Dashboard unlocked. 🚀');
     }, 800);

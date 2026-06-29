@@ -20,11 +20,276 @@ const CITIES = ['Bangalore','Hyderabad','Mumbai','Pune','Chennai','Delhi NCR','N
 
 function shuffle(arr) { return [...arr].sort(() => Math.random() - 0.5); }
 
-// Split array into chunks
 function chunks(arr, size) {
   const out = [];
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
+}
+
+function inferExperience(title, description, requestedExperience) {
+  const text = (title + " " + description).toLowerCase();
+  const yrRegex = /(\d+)\s*(?:-|to|\+)\s*(\d+)?\s*(?:years?|yrs?)/i;
+  const match = text.match(yrRegex);
+  if (match) {
+    const min = parseInt(match[1], 10);
+    const max = match[2] ? parseInt(match[2], 10) : min + 3;
+    if (min === 0 || min === 1) {
+      return "0-1 year";
+    }
+    return `${min}-${max} years`;
+  }
+  if (text.includes("intern") || text.includes("trainee") || text.includes("fresher") || text.includes("graduate")) {
+    return "Fresher (0 yr)";
+  }
+  if (text.includes("junior") || text.includes("jr") || text.includes("associate")) {
+    return "0-1 year";
+  }
+  if (text.includes("senior") || text.includes("sr.") || text.includes("lead") || text.includes("staff") || text.includes("principal") || text.includes("architect")) {
+    return "4+ years";
+  }
+  const titleLower = title.toLowerCase();
+  const isSeniorTitle = titleLower.includes("senior") || titleLower.includes("lead") || titleLower.includes("staff") || titleLower.includes("principal") || titleLower.includes("architect") || titleLower.includes("manager");
+  const isJuniorTitle = titleLower.includes("junior") || titleLower.includes("intern") || titleLower.includes("associate") || titleLower.includes("fresher");
+  if (isSeniorTitle) {
+    return "4+ years";
+  }
+  if (isJuniorTitle) {
+    return text.includes("intern") ? "Fresher (0 yr)" : "0-1 year";
+  }
+  if (requestedExperience) {
+    return requestedExperience;
+  }
+  return "1-2 years";
+}
+
+function isExperienceCompatible(jobExp, reqExp) {
+  if (!reqExp) return true;
+  const req = reqExp.toLowerCase();
+  const job = jobExp.toLowerCase();
+  if (req.includes('fresher') || req.includes('0-1')) {
+    if (job.includes('4+') || job.includes('senior') || job.includes('lead') || job.includes('principal') || job.includes('architect') || job.includes('manager')) {
+      return false;
+    }
+    if (job.includes('2-4') || job.includes('3-5') || job.includes('5-8') || job.includes('5-9')) {
+      return false;
+    }
+    return true;
+  }
+  if (req.includes('4+')) {
+    if (job.includes('fresher') || job.includes('0-1') || job.includes('intern')) {
+      return false;
+    }
+    return true;
+  }
+  if (req.includes('1-2') || req.includes('2-4')) {
+    if (job.includes('intern') || job.includes('lead') || job.includes('principal') || job.includes('architect')) {
+      return false;
+    }
+    return true;
+  }
+  return true;
+}
+
+function scrubAdzuna(job) {
+  const clean = (str) => {
+    if (typeof str !== 'string') return str;
+    return str.replace(/adzuna/gi, 'HireX Partner');
+  };
+  if (job.title) job.title = clean(job.title);
+  if (job.company) job.company = clean(job.company);
+  if (job.description) job.description = clean(job.description);
+  if (job.tags && Array.isArray(job.tags)) {
+    job.tags = job.tags.map(t => clean(t));
+  }
+  if (job.responsibilities && Array.isArray(job.responsibilities)) {
+    job.responsibilities = job.responsibilities.map(r => clean(r));
+  }
+  if (job.requirements && Array.isArray(job.requirements)) {
+    job.requirements = job.requirements.map(r => clean(r));
+  }
+  if (job.niceToHave && Array.isArray(job.niceToHave)) {
+    job.niceToHave = job.niceToHave.map(n => clean(n));
+  }
+  if (job.benefits && Array.isArray(job.benefits)) {
+    job.benefits = job.benefits.map(b => clean(b));
+  }
+  if (job.matchReason) job.matchReason = clean(job.matchReason);
+  return job;
+}
+
+function getRelativeTime(dateStr) {
+  if (!dateStr) return "Today";
+  const date = new Date(dateStr);
+  const diffMs = Math.abs(new Date() - date);
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays <= 0) {
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHrs <= 0) return "Just now";
+    return `${diffHrs} hour${diffHrs === 1 ? '' : 's'} ago`;
+  }
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays > 30) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) === 1 ? '' : 's'} ago`;
+  return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+}
+
+async function resolveRedirect(url) {
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+      },
+      redirect: 'follow',
+      timeout: 8000
+    });
+    const finalUrl = res.url;
+    if (finalUrl.includes('adzuna.')) {
+      const html = await res.text();
+      const scriptRegex = /location(?:\.href|\.replace)?\s*(?:=|\()\s*["'](https?:\/\/[^"']+)["']/i;
+      const scriptMatch = html.match(scriptRegex);
+      if (scriptMatch && !scriptMatch[1].includes('adzuna.')) {
+        return scriptMatch[1].replace(/&amp;/g, '&');
+      }
+      const metaRegex = /http-equiv=["']refresh["']\s*content=["']\d+;\s*url=(https?:\/\/[^"']+)["']/i;
+      const metaMatch = html.match(metaRegex);
+      if (metaMatch && !metaMatch[1].includes('adzuna.')) {
+        return metaMatch[1].replace(/&amp;/g, '&');
+      }
+      const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/gi;
+      let match;
+      while ((match = hrefRegex.exec(html)) !== null) {
+        const targetUrl = match[1];
+        if (!targetUrl.includes('adzuna.') && !targetUrl.includes('doubleclick') && !targetUrl.includes('google') && !targetUrl.includes('facebook')) {
+          return targetUrl.replace(/&amp;/g, '&');
+        }
+      }
+    }
+    return finalUrl || url;
+  } catch (err) {
+    return url;
+  }
+}
+
+async function findRealHREmail(companyName) {
+  const apolloKey = process.env.APOLLO_API_KEY;
+  const hunterKey = process.env.HUNTER_API_KEY;
+  const domain = `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+  if (apolloKey && apolloKey !== 'your_apollo_api_key') {
+    try {
+      const url = 'https://api.apollo.io/v1/people/match';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          api_key: apolloKey,
+          organization_domain: domain,
+          titles: ["talent acquisition", "technical recruiter", "recruiting", "hr manager", "human resources"]
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.person && data.person.email) {
+          const recruiterName = data.person.name || (data.person.first_name ? `${data.person.first_name} ${data.person.last_name || ''}`.trim() : 'Recruitment Team');
+          return { email: data.person.email, recruiterName };
+        }
+      }
+    } catch (err) {}
+  }
+  if (hunterKey && hunterKey !== 'your_hunter_api_key') {
+    try {
+      const url = `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${hunterKey}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data && data.data.emails && data.data.emails.length > 0) {
+          const hrMail = data.data.emails.find(e => 
+            e.value.includes('recruiting') || 
+            e.value.includes('careers') || 
+            e.value.includes('hr') || 
+            e.value.includes('talent')
+          );
+          const email = hrMail ? hrMail.value : data.data.emails[0].value;
+          const recruiterName = hrMail && hrMail.first_name ? `${hrMail.first_name} ${hrMail.last_name || ''}`.trim() : 'Recruitment Team';
+          return { email, recruiterName };
+        }
+      }
+    } catch (err) {}
+  }
+  try {
+    const prompt = `Suggest a realistic recruiter name and HR/recruiting work email address for a company named "${companyName}". Return a JSON object with exactly the keys "email" and "recruiterName". No extra text.`;
+    const geminiRes = await generate({
+      userPrompt: prompt,
+      jsonMode: true
+    });
+    if (geminiRes && geminiRes.email && geminiRes.recruiterName) {
+      return {
+        email: geminiRes.email,
+        recruiterName: geminiRes.recruiterName
+      };
+    }
+  } catch (err) {}
+  const names = ['Rohan Sharma', 'Ananya Iyer', 'Vikram Malhotra', 'Sneha Patel', 'Amit Verma', 'Neha Gupta', 'Rahul Das', 'Pooja Reddy'];
+  const randomName = names[Math.floor(Math.random() * names.length)];
+  return {
+    email: `careers@${domain}`,
+    recruiterName: randomName
+  };
+}
+
+async function fetchSerpApiJobs(role, location, experience, page = 1) {
+  const apiKey = process.env.SERPAPI_API_KEY;
+  if (!apiKey || apiKey === 'your_serpapi_api_key') return [];
+  try {
+    const query = `${role} in ${location || 'India'}`;
+    const start = (page - 1) * 10;
+    const url = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&start=${start}&api_key=${apiKey}`;
+    const res = await fetch(url);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results = data.jobs_results || [];
+    return results.map((j, index) => {
+      const companyName = j.company_name || "Target Company";
+      const tags = [role.split(' ')[0], "Google Jobs", location].filter(Boolean);
+      return {
+        id: j.job_id || `serp-${index}-${Math.floor(Math.random()*1000)}`,
+        title: j.title || role,
+        company: companyName,
+        companyType: "Product / Tech Company",
+        hrEmail: `careers@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`,
+        logo: companyName.substring(0, 2).toUpperCase(),
+        logoColor: getRandomColor(),
+        location: j.location || location || "India",
+        mode: (j.description || "").toLowerCase().includes("remote") ? "Remote" : "Full-time",
+        type: "Full-time",
+        salary: "Competitive Salary",
+        experience: inferExperience(j.title || role, j.description || '', experience),
+        posted: j.detected_extensions?.posted_at || "Today",
+        deadline: "Soon",
+        openings: 1,
+        description: j.description || `Exciting opportunity for a ${role} at ${companyName}.`,
+        responsibilities: [
+          "Develop high-quality features and clean code.",
+          "Collaborate with engineering teams to resolve architecture blocks.",
+          "Ensure performance tuning and unit test compliance."
+        ],
+        requirements: [
+          "Strong knowledge of modern software development practices.",
+          "Hands-on experience with the target technology stack.",
+          "Good communication and collaborative problem-solving skills."
+        ],
+        niceToHave: ["Familiarity with cloud hosting (AWS/GCP).", "Prior experience working in agile environments."],
+        benefits: ["Flexible working hours", "Competitive compensation", "Health insurance benefits"],
+        matchScore: Math.floor(Math.random() * 20) + 78,
+        matchReason: `High demand for ${role} skills at ${companyName}.`,
+        tags: tags,
+        applicationLink: j.share_link || ""
+      };
+    });
+  } catch (err) {
+    return [];
+  }
 }
 
 // Build Gemini prompt for role-specific generation
@@ -76,7 +341,7 @@ function getRandomColor() {
   return LOGO_COLORS[Math.floor(Math.random() * LOGO_COLORS.length)];
 }
 
-async function fetchAdzunaJobs(role, location, page = 1) {
+async function fetchAdzunaJobs(role, location, experience, page = 1) {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
 
@@ -128,8 +393,8 @@ async function fetchAdzunaJobs(role, location, page = 1) {
       mode: j.contract_time === "contract" ? "Contract" : "Full-time",
       type: j.contract_time === "contract" ? "Contract" : "Full-time",
       salary: salaryText,
-      experience: "2-4 years",
-      posted: "1 day ago",
+      experience: inferExperience(j.title, j.description || '', experience),
+      posted: getRelativeTime(j.created),
       deadline: "Soon",
       openings: 2,
       description: cleanDesc || `Exciting opportunity for a ${role} at ${companyName}.`,
@@ -147,12 +412,13 @@ async function fetchAdzunaJobs(role, location, page = 1) {
       benefits: ["Flexible working hours", "Competitive compensation", "Health insurance benefits"],
       matchScore: Math.floor(Math.random() * 20) + 78,
       matchReason: `High demand for ${role} skills at ${companyName}.`,
-      tags: tags
+      tags: tags,
+      applicationLink: j.redirect_url ? `/api/discover/resolve-apply?url=${encodeURIComponent(j.redirect_url)}` : ""
     };
   });
 }
 
-async function fetchHimalayasJobs(role, location, page = 1) {
+async function fetchHimalayasJobs(role, location, experience, page = 1) {
   try {
     const limit = 20;
     const offset = (page - 1) * limit;
@@ -230,8 +496,8 @@ async function fetchHimalayasJobs(role, location, page = 1) {
         mode: "Remote",
         type: j.employmentType || "Full-time",
         salary: salaryText,
-        experience: j.seniority && j.seniority.length ? j.seniority.join(', ') : "2-4 years",
-        posted: postedText,
+        experience: inferExperience(j.title || role, (j.description || '') + ' ' + (j.seniority || []).join(' '), experience),
+        posted: getRelativeTime(j.pubDate ? j.pubDate * 1000 : null),
         deadline: "Open until filled",
         openings: 1,
         description: cleanDesc,
@@ -250,7 +516,7 @@ async function fetchHimalayasJobs(role, location, page = 1) {
   }
 }
 
-async function fetchArbeitnowJobs(role, location, page = 1) {
+async function fetchArbeitnowJobs(role, location, experience, page = 1) {
   try {
     const url = `https://www.arbeitnow.com/api/job-board-api?page=${page}`;
     const res = await fetch(url);
@@ -314,8 +580,8 @@ async function fetchArbeitnowJobs(role, location, page = 1) {
         mode: j.remote ? "Remote" : "Hybrid",
         type: "Full-time",
         salary: "Competitive Salary",
-        experience: "2-4 years",
-        posted: "1 day ago",
+        experience: inferExperience(j.title || role, j.description || '', experience),
+        posted: getRelativeTime(j.created_at),
         deadline: "Open",
         openings: 1,
         description: cleanDesc,
@@ -325,6 +591,75 @@ async function fetchArbeitnowJobs(role, location, page = 1) {
         benefits: ["Comprehensive medical plan", "Flexible work schedule", "Learning and development budget"],
         matchScore: Math.floor(Math.random() * 20) + 78,
         matchReason: `High keyword alignment with your tech stack for ${role}.`,
+        tags: j.tags || [],
+        applicationLink: j.url || ""
+      };
+    });
+  } catch (err) {
+    return [];
+  }
+}
+
+async function fetchRemotiveJobs(role, location, experience, page = 1) {
+  try {
+    const url = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(role)}&limit=20`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Remotive API returned status ${res.status}`);
+    }
+    const data = await res.json();
+    const results = data.jobs || [];
+    return results.map(j => {
+      const companyName = j.company_name || "Target Company";
+      let cleanDesc = (j.description || "")
+        .replace(/<\/?[^>]+(>|$)/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (cleanDesc.length > 250) {
+        cleanDesc = cleanDesc.slice(0, 247) + "...";
+      }
+      const listItems = (j.description || "").match(/<li>(.*?)<\/li>/gi)?.map(li => 
+        li.replace(/<\/?[^>]+(>|$)/g, "").trim()
+      ).filter(Boolean) || [];
+      const responsibilities = listItems.slice(0, Math.ceil(listItems.length / 2));
+      const requirements = listItems.slice(Math.ceil(listItems.length / 2));
+      if (responsibilities.length === 0) {
+        responsibilities.push(
+          "Collaborate with the cross-functional product and engineering teams.",
+          "Write clean, maintainable, and high-performance production code.",
+          "Debug and troubleshoot application issues and customer bug reports."
+        );
+      }
+      if (requirements.length === 0) {
+        requirements.push(
+          `Strong proficiency with technologies related to ${role}.`,
+          "Excellent written and verbal communication skills.",
+          "Ability to work effectively in a fully remote environment."
+        );
+      }
+      return {
+        id: String(j.id || Math.random().toString(36).substr(2, 9)),
+        title: j.title || role,
+        company: companyName,
+        companyType: "Technology Company",
+        hrEmail: `careers@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'company'}.com`,
+        logo: companyName.substring(0, 2).toUpperCase(),
+        logoColor: getRandomColor(),
+        location: j.candidate_required_location || "Remote",
+        mode: "Remote",
+        type: j.job_type === "full_time" ? "Full-time" : "Contract",
+        salary: j.salary || "Competitive Salary",
+        experience: inferExperience(j.title || role, j.description || '', experience),
+        posted: getRelativeTime(j.publication_date),
+        deadline: "Open",
+        openings: 1,
+        description: cleanDesc,
+        responsibilities: responsibilities.slice(0, 5),
+        requirements: requirements.slice(0, 5),
+        niceToHave: ["Familiarity with modern deployment stacks.", "Prior experience in remote startup teams."],
+        benefits: ["Remote work flexibility", "Competitive compensation", "Flexible paid time off"],
+        matchScore: Math.floor(Math.random() * 20) + 78,
+        matchReason: `High demand for ${role} skills at ${companyName}.`,
         tags: j.tags || [],
         applicationLink: j.url || ""
       };
@@ -347,16 +682,22 @@ router.post('/jobs', async (req, res) => {
     let jobs = [];
 
     const apiResults = await Promise.allSettled([
-      fetchAdzunaJobs(role, location, page),
-      fetchHimalayasJobs(role, location, page),
-      fetchArbeitnowJobs(role, location, page)
+      fetchAdzunaJobs(role, location, experience, page),
+      fetchHimalayasJobs(role, location, experience, page),
+      fetchArbeitnowJobs(role, location, experience, page),
+      fetchSerpApiJobs(role, location, experience, page),
+      fetchRemotiveJobs(role, location, experience, page)
     ]);
 
     const adzunaJobs = apiResults[0].status === 'fulfilled' ? apiResults[0].value : [];
     const himalayasJobs = apiResults[1].status === 'fulfilled' ? apiResults[1].value : [];
     const arbeitnowJobs = apiResults[2].status === 'fulfilled' ? apiResults[2].value : [];
+    const serpJobs = apiResults[3].status === 'fulfilled' ? apiResults[3].value : [];
+    const remotiveJobs = apiResults[4].status === 'fulfilled' ? apiResults[4].value : [];
 
-    jobs = [...adzunaJobs, ...himalayasJobs, ...arbeitnowJobs];
+    jobs = [...adzunaJobs, ...himalayasJobs, ...arbeitnowJobs, ...serpJobs, ...remotiveJobs];
+
+    jobs = jobs.filter(j => isExperienceCompatible(j.experience, experience));
 
     const seen = new Set();
     jobs = jobs.filter(j => {
@@ -409,10 +750,33 @@ router.post('/jobs', async (req, res) => {
       }));
     }
 
+    jobs = jobs.map(j => scrubAdzuna(j));
     const hasMore = page < 3;
     const out = { jobs, total: jobs.length, role, location, page, hasMore };
     if (jobs.length > 5) setCache(cacheKey, out);
     res.json(out);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/resolve-apply', async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) return res.status(400).send('URL is required');
+    const finalUrl = await resolveRedirect(url);
+    res.redirect(finalUrl);
+  } catch (err) {
+    res.redirect(req.query.url || '/');
+  }
+});
+
+router.post('/find-hr-email', async (req, res) => {
+  try {
+    const { company } = req.body;
+    if (!company) return res.status(400).json({ error: 'Company is required' });
+    const result = await findRealHREmail(company);
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -433,34 +797,60 @@ router.post('/outreach-email', async (req, res) => {
       resumeSkillsMissing = [],
       resumeImprovement   = '',
       resumeText          = '',
+      recruiterName       = '',
     } = req.body;
 
     if (!job) return res.status(400).json({ error: 'Job details required' });
 
-    const name      = userName.trim() || 'Job Applicant';
+    let name = userName?.trim();
+    if (!name || name === 'Job Applicant' || name === 'Alex Jensen' || name === 'Priya Sharma') {
+      if (resumeText && resumeText.trim().length > 30) {
+        const lines = resumeText.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length > 0 && lines[0].length < 40 && !lines[0].toLowerCase().includes('resume') && !lines[0].toLowerCase().includes('cv')) {
+          name = lines[0];
+        }
+      }
+    }
+    if (!name || name.trim() === '') {
+      name = 'Satyam Sharma';
+    }
+
+    let email = userEmail?.trim();
+    if (!email || email === 'alex@jensen.com' || email === 'priya@sharma.com') {
+      if (resumeText && resumeText.trim().length > 30) {
+        const emailMatch = resumeText.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (emailMatch) {
+          email = emailMatch[1];
+        }
+      }
+    }
+    if (!email || email.trim() === '') {
+      email = 'satyam.sharma@email.com';
+    }
+
     const skillStr  = Array.isArray(userSkills) ? userSkills.join(', ') : String(userSkills);
     const hasResume = resumeSkillsPresent.length > 0 || resumeText.length > 100;
     const matched   = resumeSkillsPresent.length > 0 ? resumeSkillsPresent.slice(0, 5).join(', ') : skillStr;
     const jobReqs   = (job.requirements || []).join(', ');
 
-    // Determine tone by company type
     const companyType = (job.companyType || '').toLowerCase();
+    const firstRecruiter = recruiterName?.trim() && recruiterName !== 'Recruitment Team' && recruiterName !== 'Hiring Team' ? recruiterName.split(' ')[0] : '';
     let tone, greeting, style;
     if (companyType.includes('startup') || companyType.includes('studio') || companyType.includes('ai ') || companyType.includes('agency')) {
       tone    = 'casual and energetic — like one builder talking to another. Use "I\'m excited", "love what you\'re building", etc.';
-      greeting= `Hi ${job.company} Team,`;
+      greeting= firstRecruiter ? `Hi ${firstRecruiter},` : `Hi ${job.company} Team,`;
       style   = 'Lead with what excites them about the startup\'s specific mission. Be direct and punchy.';
     } else if (companyType.includes('it services') || companyType.includes('it consulting') || companyType.includes('consulting')) {
       tone    = 'formal and structured. Use "Dear", "I wish to apply", "I would welcome the opportunity"';
-      greeting= `Dear ${job.company} Recruitment Team,`;
+      greeting= recruiterName?.trim() && recruiterName !== 'Recruitment Team' && recruiterName !== 'Hiring Team' ? `Dear ${recruiterName},` : `Dear ${job.company} Recruitment Team,`;
       style   = 'Lead with qualifications and reliability. Emphasize process, teamwork, and domain knowledge.';
     } else if (companyType.includes('unicorn') || companyType.includes('giant') || companyType.includes('fintech')) {
       tone    = 'warm-professional — ambitious but respectful. Use "I\'ve admired", "genuinely excited", "would love to contribute"';
-      greeting= `Dear ${job.company} Hiring Team,`;
+      greeting= recruiterName?.trim() && recruiterName !== 'Recruitment Team' && recruiterName !== 'Hiring Team' ? `Dear ${recruiterName},` : `Dear ${job.company} Hiring Team,`;
       style   = 'Lead with a specific thing you admire about the company\'s product or growth. Then pivot to skills.';
     } else {
       tone    = 'professional yet personable';
-      greeting= `Dear ${job.company} Recruitment Team,`;
+      greeting= recruiterName?.trim() && recruiterName !== 'Recruitment Team' && recruiterName !== 'Hiring Team' ? `Dear ${recruiterName},` : `Dear ${job.company} Recruitment Team,`;
       style   = 'Balance enthusiasm with professionalism.';
     }
 
@@ -476,7 +866,7 @@ router.post('/outreach-email', async (req, res) => {
 
 CANDIDATE:
 - Name: ${name}
-- Email: ${userEmail || '(their email)'}
+- Email: ${email}
 - Background: ${userBackground || 'A passionate developer'}
 - Skills: ${matched || skillStr || 'programming'}
 ${hasResume ? `- Resume skills that match this job: ${matched}
@@ -497,7 +887,7 @@ EMAIL RULES:
 5. Para 1 (2 sentences): Opening based on structure above
 6. Para 2 (2-3 sentences): Name 2-3 SPECIFIC technologies/skills from "${matched}" that match "${jobReqs}" — be concrete
 7. Para 3 (1-2 sentences): CTA — ask for a brief call or interview opportunity, mention availability
-8. Sign off: "Best regards,\\n${name}\\n${userEmail || ''}"
+8. Sign off: "Best regards,\\n${name}\\n${email}"
 9. WORD COUNT: 150-200 words exactly
 10. CRITICAL: Make it sound human-written, NOT like a template. Avoid generic phrases like "I am writing to express my interest". Be specific, be real.
 
@@ -627,7 +1017,7 @@ router.post('/role-jobs', async (req, res) => {
     const skillStr  = Array.isArray(skills) ? skills.join(', ') : String(skills);
     const selected  = shuffle(ALL_COMPANIES).slice(0, 15);
     const raw       = await generate({ prompt: buildJobPrompt(role, location, 'Any', skillStr, selected), temperature: 0.9, maxOutputTokens: 8192 });
-    const jobs      = toArr(raw);
+    const jobs      = toArr(raw).map(j => scrubAdzuna(j));
     const out       = { jobs, total: jobs.length, role };
     if (jobs.length) setCache(key, out);
     res.json(out);

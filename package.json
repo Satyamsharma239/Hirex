@@ -1,0 +1,10 @@
+{
+  "name": "hirex-root",
+  "version": "1.0.0",
+  "description": "HireX AI-Powered Career Suite Root",
+  "scripts": {
+    "install-all": "npm install --prefix backend && npm install --prefix frontend",
+    "build-frontend": "npm run build --prefix frontend",
+    "start": "node backend/index.js"
+  }
+}

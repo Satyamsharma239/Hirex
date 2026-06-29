@@ -29,6 +29,7 @@ export const discoverAPI = {
   getCompanyIntel: (d) => API.post('/discover/company-intel', d),
   getOutreachEmail:(d) => API.post('/discover/outreach-email', d),
   getATSAudit:     (d) => API.post('/discover/ats-audit', d),
+  findHrEmail:     (d) => API.post('/discover/find-hr-email', d),
 };
 
 export const featuresAPI = {

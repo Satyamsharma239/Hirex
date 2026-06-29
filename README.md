@@ -40,17 +40,22 @@ Visualize your application velocity (Applied, Interviewing, Offered) using inter
 
 ## 📸 Application Screenshots
 
-### 📊 Application Tracker & Analytics
-![Job Tracker Dashboard](./assets/dashboard_tracker.png)
+<details>
+  <summary><b>Click to expand screenshots</b></summary>
+  <br />
 
-### 🔍 Interactive Job Discovery & Outreaching
-![Job Discovery](./assets/job_discovery.png)
+  ### 📊 Application Tracker & Analytics
+  ![Job Tracker Dashboard](./assets/dashboard_tracker.png)
 
-### 📄 AI Outreach & Personalization Setup
-![AI Outreach Setup](./assets/outreach_email.png)
+  ### 🔍 Interactive Job Discovery & Outreaching
+  ![Job Discovery](./assets/job_discovery.png)
 
-### ⚡ Smart Career Tools (Resume Match, Cover Letter, Career Card)
-![ATS Scanner & Career Tools](./assets/smart_tools.png)
+  ### 📄 AI Outreach & Personalization Setup
+  ![AI Outreach Setup](./assets/outreach_email.png)
 
-### 🎙️ AI Voice Interview Simulator
-![AI Voice Interview Simulator](./assets/voice_interview.png)
+  ### ⚡ Smart Career Tools (Resume Match, Cover Letter, Career Card)
+  ![ATS Scanner & Career Tools](./assets/smart_tools.png)
+
+  ### 🎙️ AI Voice Interview Simulator
+  ![AI Voice Interview Simulator](./assets/voice_interview.png)
+</details>

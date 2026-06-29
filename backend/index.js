@@ -29,6 +29,9 @@ app.use('/api/', apiLimiter);
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
+  if (!req.path.startsWith('/api')) {
+    return next();
+  }
   if (req.path === '/api/jobs/external') {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
@@ -38,11 +41,10 @@ app.use((req, res, next) => {
     }
     return next();
   }
-  
   cors({
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-      if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin)) {
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin) || /^https?:\/\/127\.0\.0\.1(:\d+)?$/.test(origin) || origin.includes('onrender.com') || (req.headers.host && origin.includes(req.headers.host))) {
         return callback(null, true);
       }
       callback(new Error('Not allowed by CORS'));

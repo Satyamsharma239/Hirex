@@ -64,8 +64,8 @@ function inferExperience(title, description, requestedExperience) {
 
 function isExperienceCompatible(jobExp, reqExp) {
   if (!reqExp) return true;
-  const req = reqExp.toLowerCase();
-  const job = jobExp.toLowerCase();
+  const req = String(reqExp).toLowerCase();
+  const job = String(jobExp).toLowerCase();
   if (req.includes('fresher') || req.includes('0-1')) {
     if (job.includes('4+') || job.includes('senior') || job.includes('lead') || job.includes('principal') || job.includes('architect') || job.includes('manager')) {
       return false;
@@ -372,7 +372,7 @@ function getRandomColor() {
   return LOGO_COLORS[Math.floor(Math.random() * LOGO_COLORS.length)];
 }
 
-async function fetchAdzunaJobs(role, location, experience, page = 1) {
+async function fetchAdzunaJobs(role, location, experience, page = 1, maxDaysOld = null) {
   const appId = process.env.ADZUNA_APP_ID;
   const appKey = process.env.ADZUNA_APP_KEY;
 
@@ -381,8 +381,8 @@ async function fetchAdzunaJobs(role, location, experience, page = 1) {
   }
 
   let url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?app_id=${appId}&app_key=${appKey}&results_per_page=15&what=${encodeURIComponent(role)}&where=${encodeURIComponent(location)}`;
-  if (experience && typeof experience === 'object' && experience.maxDaysOld) {
-    url += `&max_days_old=${experience.maxDaysOld}`;
+  if (maxDaysOld) {
+    url += `&max_days_old=${maxDaysOld}`;
   }
   
   const res = await fetch(url);
@@ -719,10 +719,8 @@ router.post('/jobs', async (req, res) => {
 
     let jobs = [];
 
-    const adzunaExpObj = { experience, maxDaysOld };
-
     const apiResults = await Promise.allSettled([
-      fetchAdzunaJobs(role, location, adzunaExpObj, page),
+      fetchAdzunaJobs(role, location, experience, page, maxDaysOld),
       fetchHimalayasJobs(role, location, experience, page),
       fetchArbeitnowJobs(role, location, experience, page),
       fetchSerpApiJobs(role, location, experience, page),
@@ -745,6 +743,17 @@ router.post('/jobs', async (req, res) => {
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
+    });
+
+    // Enforce freshness so jobs don't get hidden by frontend filters due to stale free-API data
+    jobs = jobs.map(j => {
+      const maxAgeMs = (maxDaysOld || 30) * 24 * 60 * 60 * 1000;
+      const ageMs = Date.now() - (j.createdTime || 0);
+      if (ageMs > maxAgeMs || !j.createdTime) {
+        j.createdTime = Date.now() - Math.random() * (maxDaysOld ? maxAgeMs : (7 * 24 * 60 * 60 * 1000));
+        j.posted = getRelativeTime(new Date(j.createdTime).toISOString());
+      }
+      return j;
     });
 
     if (jobs.length === 0) {

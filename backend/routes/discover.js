@@ -167,23 +167,31 @@ async function resolveRedirect(url) {
       timeout: 8000
     });
     const finalUrl = res.url;
+
+    const brokenDomains = ['kxcdn.com', 'zunastatic', 'cdn.adzuna', 'doubleclick', 'googlesyndication'];
+    const isBroken = (u) => brokenDomains.some(d => u.includes(d));
+
+    if (isBroken(finalUrl)) {
+      return url;
+    }
+
     if (finalUrl.includes('adzuna.')) {
       const html = await res.text();
       const scriptRegex = /location(?:\.href|\.replace)?\s*(?:=|\()\s*["'](https?:\/\/[^"']+)["']/i;
       const scriptMatch = html.match(scriptRegex);
-      if (scriptMatch && !scriptMatch[1].includes('adzuna.')) {
+      if (scriptMatch && !scriptMatch[1].includes('adzuna.') && !isBroken(scriptMatch[1])) {
         return scriptMatch[1].replace(/&amp;/g, '&');
       }
       const metaRegex = /http-equiv=["']refresh["']\s*content=["']\d+;\s*url=(https?:\/\/[^"']+)["']/i;
       const metaMatch = html.match(metaRegex);
-      if (metaMatch && !metaMatch[1].includes('adzuna.')) {
+      if (metaMatch && !metaMatch[1].includes('adzuna.') && !isBroken(metaMatch[1])) {
         return metaMatch[1].replace(/&amp;/g, '&');
       }
       const hrefRegex = /href=["'](https?:\/\/[^"']+)["']/gi;
       let match;
       while ((match = hrefRegex.exec(html)) !== null) {
         const targetUrl = match[1];
-        if (!targetUrl.includes('adzuna.') && !targetUrl.includes('doubleclick') && !targetUrl.includes('google') && !targetUrl.includes('facebook')) {
+        if (!targetUrl.includes('adzuna.') && !isBroken(targetUrl) && !targetUrl.includes('google') && !targetUrl.includes('facebook')) {
           return targetUrl.replace(/&amp;/g, '&');
         }
       }
@@ -437,7 +445,7 @@ async function fetchAdzunaJobs(role, location, experience, page = 1) {
       matchScore: Math.floor(Math.random() * 20) + 78,
       matchReason: `High demand for ${role} skills at ${companyName}.`,
       tags: tags,
-      applicationLink: j.redirect_url ? `/api/discover/resolve-apply?url=${encodeURIComponent(j.redirect_url)}` : ""
+      applicationLink: j.redirect_url || ""
     };
   });
 }

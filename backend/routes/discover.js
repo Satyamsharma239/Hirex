@@ -380,7 +380,10 @@ async function fetchAdzunaJobs(role, location, experience, page = 1) {
     throw new Error('Adzuna credentials not configured');
   }
 
-  const url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?app_id=${appId}&app_key=${appKey}&results_per_page=15&what=${encodeURIComponent(role)}&where=${encodeURIComponent(location)}`;
+  let url = `https://api.adzuna.com/v1/api/jobs/in/search/${page}?app_id=${appId}&app_key=${appKey}&results_per_page=15&what=${encodeURIComponent(role)}&where=${encodeURIComponent(location)}`;
+  if (experience && typeof experience === 'object' && experience.maxDaysOld) {
+    url += `&max_days_old=${experience.maxDaysOld}`;
+  }
   
   const res = await fetch(url);
   if (!res.ok) {
@@ -706,7 +709,7 @@ async function fetchRemotiveJobs(role, location, experience, page = 1) {
 
 router.post('/jobs', async (req, res) => {
   try {
-    const { role = '', location = 'Bangalore', skills = [], experience = 'Fresher', page = 1 } = req.body;
+    const { role = '', location = 'Bangalore', skills = [], experience = 'Fresher', page = 1, maxDaysOld } = req.body;
     if (!role.trim()) return res.status(400).json({ error: 'Role is required' });
 
     const skillStr = Array.isArray(skills) ? skills.join(', ') : String(skills);
@@ -716,8 +719,10 @@ router.post('/jobs', async (req, res) => {
 
     let jobs = [];
 
+    const adzunaExpObj = { experience, maxDaysOld };
+
     const apiResults = await Promise.allSettled([
-      fetchAdzunaJobs(role, location, experience, page),
+      fetchAdzunaJobs(role, location, adzunaExpObj, page),
       fetchHimalayasJobs(role, location, experience, page),
       fetchArbeitnowJobs(role, location, experience, page),
       fetchSerpApiJobs(role, location, experience, page),

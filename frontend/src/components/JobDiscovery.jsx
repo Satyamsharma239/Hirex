@@ -14,6 +14,7 @@ import {
 const CITIES = ['Any Location', 'Bangalore', 'Hyderabad', 'Mumbai', 'Pune', 'Chennai', 'Delhi NCR', 'Noida', 'Jaipur', 'Ahmedabad', 'Kolkata', 'Remote'];
 const EXP_OPTS = ['Fresher (0 yr)', '0-1 year', '1-2 years', '2-4 years', '4+ years'];
 const INDUSTRIES = ['Any Industry', 'SaaS', 'FinTech', 'E-Commerce', 'Healthcare', 'EdTech', 'Logistics', 'Marketing', 'Finance'];
+const TIME_OPTS = ['Any Time', 'Past 1 Hour', 'Past 24 Hours', 'Past 7 Days', 'Past 30 Days'];
 const ROLE_PRESETS = [
   { label: 'MERN Stack Developer', icon: '⚡' },
   { label: 'React Developer', icon: '⚛️' },
@@ -809,6 +810,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   const [showProfile, setShowProfile] = useState(false);
   const [modeFilter, setModeFilter]   = useState('Any');
   const [typeFilter, setTypeFilter]   = useState('Any');
+  const [timeFilter, setTimeFilter]   = useState('Any Time');
   const [savedJobs, setSavedJobs]     = useState([]);
 
   useEffect(() => {
@@ -821,6 +823,14 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
     }
   }, [initialRole]);
 
+  const getMaxDays = () => {
+    if (timeFilter === 'Past 1 Hour') return 1;
+    if (timeFilter === 'Past 24 Hours') return 1;
+    if (timeFilter === 'Past 7 Days') return 7;
+    if (timeFilter === 'Past 30 Days') return 30;
+    return null;
+  };
+
   const doSearch = async (searchRole) => {
     const r = searchRole || role;
     if (!r?.trim()) return toast.error('Enter a role to search');
@@ -831,6 +841,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
         location: city === 'Any Location' ? '' : city,
         skills: initialSkills || [],
         experience,
+        maxDaysOld: getMaxDays(),
       });
       setJobs(data.jobs || []);
       setHasMore(data.hasMore || false);
@@ -851,6 +862,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
         location: city === 'Any Location' ? '' : city,
         skills: initialSkills || [],
         experience,
+        maxDaysOld: getMaxDays(),
       });
       setJobs(prev => [...prev, ...(data.jobs || [])]);
       setPage(nextPage);
@@ -910,6 +922,13 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   const filtered = jobs.filter(j => {
     if (modeFilter !== 'Any' && j.mode !== modeFilter) return false;
     if (typeFilter !== 'Any' && j.type !== typeFilter) return false;
+    if (timeFilter !== 'Any Time') {
+      const hoursSince = (Date.now() - (j.createdTime || Date.now())) / (1000 * 60 * 60);
+      if (timeFilter === 'Past 1 Hour' && hoursSince > 1) return false;
+      if (timeFilter === 'Past 24 Hours' && hoursSince > 24) return false;
+      if (timeFilter === 'Past 7 Days' && hoursSince > 24 * 7) return false;
+      if (timeFilter === 'Past 30 Days' && hoursSince > 24 * 30) return false;
+    }
     return true;
   });
 
@@ -978,7 +997,8 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
           {[
             { value: city, onChange: setCity, options: CITIES, placeholder: 'Location' },
             { value: experience, onChange: setExp, options: EXP_OPTS, placeholder: 'Experience' },
-            { value: industry, onChange: setIndustry, options: INDUSTRIES, placeholder: 'Industry' }
+            { value: industry, onChange: setIndustry, options: INDUSTRIES, placeholder: 'Industry' },
+            { value: timeFilter, onChange: setTimeFilter, options: TIME_OPTS, placeholder: 'Date Posted' }
           ].map(filter => (
             <div key={filter.placeholder} style={{ position: 'relative', display: 'inline-block' }}>
               <select 

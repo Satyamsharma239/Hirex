@@ -56,10 +56,7 @@ function inferExperience(title, description, requestedExperience) {
   if (isJuniorTitle) {
     return text.includes("intern") ? "Fresher (0 yr)" : "0-1 year";
   }
-  if (requestedExperience) {
-    return requestedExperience;
-  }
-  return "1-2 years";
+  return "2-4 years";
 }
 
 function isExperienceCompatible(jobExp, reqExp) {

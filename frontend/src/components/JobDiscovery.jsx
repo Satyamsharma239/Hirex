@@ -947,7 +947,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: 'var(--text-1)', margin: 0 }}>
-            Hello, {resumeData?.name || 'Priya Sharma'}!
+            Hello, {resumeData?.name || 'User'}!
           </h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
@@ -956,7 +956,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
             <span style={{ position: 'absolute', top: -1, right: -1, width: 6, height: 6, borderRadius: '50%', background: '#f43f5e' }} />
           </div>
           <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-            {(resumeData?.name || 'Priya Sharma').substring(0, 2).toUpperCase()}
+            {(resumeData?.name || 'User').substring(0, 2).toUpperCase()}
           </div>
         </div>
       </div>
@@ -1130,11 +1130,11 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {[
-                    { label: 'Full Name', value: resumeData?.name || 'Priya Sharma' },
-                    { label: 'Email', value: resumeData?.contact?.email || 'priya@example.com' },
-                    { label: 'Phone', value: resumeData?.contact?.phone || '+91 9876543210' },
-                    { label: 'LinkedIn URL', value: resumeData?.contact?.linkedin || 'linkedin.com/in/priyasharma' },
-                    { label: 'Portfolio / GitHub', value: resumeData?.contact?.github || 'github.com/priyacodes' },
+                    { label: 'Full Name', value: resumeData?.name || '' },
+                    { label: 'Email', value: resumeData?.contact?.email || '' },
+                    { label: 'Phone', value: resumeData?.contact?.phone || '' },
+                    { label: 'LinkedIn URL', value: resumeData?.contact?.linkedin || '' },
+                    { label: 'Portfolio / GitHub', value: resumeData?.contact?.github || '' },
                   ].map(item => (
                     <div key={item.label}>
                       <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4, fontWeight: 600 }}>{item.label}</div>

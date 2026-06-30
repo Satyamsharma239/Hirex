@@ -243,7 +243,7 @@ June 2025 - Present | Remote, India
         brandData.github = contact.github;
       }
       onComplete(parsedText, brandData, dnaData, auditData);
-      toast.success('Onboarding complete! Dashboard unlocked. 🚀');
+      toast.success('Onboarding complete — Dashboard unlocked');
     }, 800);
   };
 

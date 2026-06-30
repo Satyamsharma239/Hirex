@@ -72,7 +72,7 @@ function UserProfileModal({ onSave, onClose }) {
     }
     localStorage.setItem('hirex_user', JSON.stringify(form));
     onSave(form);
-    toast.success('Profile saved! ✅');
+    toast.success('Profile saved');
   };
 
   const lbl = { fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 7, letterSpacing: '0.6px', textTransform: 'uppercase' };
@@ -178,7 +178,7 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
 
   const copyEmail = () => {
     navigator.clipboard.writeText(pitchText);
-    toast.success('Email copied to clipboard! 📋');
+    toast.success('Email copied to clipboard');
   };
 
   const handleLinkedInSearch = () => {
@@ -311,7 +311,7 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(`https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(companyName + ' ' + recruiter)}`);
-                toast.success('LinkedIn Search link copied! 📋');
+                toast.success('LinkedIn search link copied');
               }}
               className="btn btn-ghost btn-sm"
               style={{ fontSize: 11, padding: '4px 0', border: 'none', background: 'transparent', color: 'var(--text-3)' }}
@@ -344,7 +344,7 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(hrEmail);
-                toast.success('HR Email copied! 📋');
+                toast.success('HR email copied');
               }}
               className="btn btn-ghost btn-sm"
               style={{ fontSize: 11, padding: '4px 0', border: 'none', background: 'transparent', color: 'var(--text-3)' }}
@@ -496,16 +496,9 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
         {job.applicationLink && (
-          <button
-            onClick={() => {
-              navigator.clipboard.writeText(job.applicationLink);
-              toast.success('Apply link copied to clipboard! 📋');
-            }}
-            className="btn btn-primary"
-            style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', display: 'flex', gap: 6, alignItems: 'center' }}
-          >
-            <Copy size={14} /> Copy Apply Link
-          </button>
+          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 700, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center', borderRadius: 10, fontSize: 13 }}>
+            <ExternalLink size={14} /> Apply on Company Site
+          </a>
         )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
@@ -776,7 +769,7 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
             <button
               onClick={() => {
                 navigator.clipboard.writeText(job.applicationLink);
-                toast.success('Apply link copied! 📋');
+                toast.success('Apply link copied');
               }}
               className="btn btn-ghost"
               title="Copy Apply Link"
@@ -884,7 +877,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
         appliedDate: new Date().toISOString().split('T')[0],
         jobDescription: [job.description, ...(job.responsibilities||[])].join('\n'),
       });
-      toast.success(`${job.company} added to tracker! 📌`);
+      toast.success(`${job.company} added to tracker`);
     } catch { toast.error('Failed to add to tracker'); }
   };
 

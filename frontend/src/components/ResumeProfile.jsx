@@ -136,7 +136,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
         role: bulletRole
       });
       setOptimizedResult(data.optimized || '');
-      toast.success('Optimized sentence generated! ✨');
+      toast.success('Optimized sentence generated');
     } catch (err) {
       toast.error('Failed to optimize bullet point');
     }
@@ -152,7 +152,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
     link.download = `${(activeBrand?.name || 'Candidate').replace(/\s+/g, '_')}_Optimized_Resume.txt`;
     link.click();
     URL.revokeObjectURL(url);
-    toast.success('Optimized resume downloaded! 📥');
+    toast.success('Optimized resume downloaded');
   };
 
   const handleDrop = useCallback(e => {
@@ -310,7 +310,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       }
 
       onUpdateProfile(uploadedText, nextBrand, nextDna, nextAudit);
-      toast.success('Resume parsed and verified successfully! ✨');
+      toast.success('Resume parsed and verified successfully');
     } catch (err) {
       toast.error('Failed to complete profile generation');
     }
@@ -350,7 +350,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       };
       
       onUpdateProfile(resumeText, activeBrand, activeDna, updatedAudit);
-      toast.success('Entire resume recreated & optimized! 🚀');
+      toast.success('Entire resume recreated & optimized');
     } catch (err) {
       toast.error('Failed to recreate resume');
     }
@@ -420,7 +420,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       }
 
       onUpdateProfile(textToApply, newBrandData || parsedProfileData, newDnaData, newAuditData);
-      toast.success('Optimized resume is now active globally! 🚀');
+      toast.success('Optimized resume is now active globally');
     } catch (err) {
       toast.error('Failed to sync applied resume');
     }
@@ -442,7 +442,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
       const url = `/u/${data.username}`;
       setPublishedUrl(url);
       localStorage.setItem('hirex_published_url', url);
-      toast.success(publishedUrl ? 'Hosted Portfolio updated! 🌐' : 'Hosted Portfolio published live! 🌐');
+      toast.success(publishedUrl ? 'Hosted portfolio updated' : 'Hosted portfolio published');
     } catch (e) {
       toast.error('Failed to publish profile page');
     }
@@ -671,7 +671,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                   </button>
                   <button onClick={() => {
                     toast.success('Analyzing resume sections structure...');
-                    setTimeout(() => toast.success('Layout sections formatted properly! 🎯'), 600);
+                    setTimeout(() => toast.success('Layout sections formatted'), 600);
                   }} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', padding: '10px 14px', fontSize: 13 }}>
                     <ListChecks size={14} color="var(--teal)" />
                     Reformat Sections
@@ -789,7 +789,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     <button 
                       onClick={() => {
                         navigator.clipboard.writeText(activeAudit.atsOptimizedResumeText || fallbackAudit.atsOptimizedResumeText);
-                        toast.success('Optimized resume copied! 📋');
+                        toast.success('Optimized resume copied');
                       }}
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: 11, gap: 6 }}
@@ -879,7 +879,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                           <button 
                             onClick={() => {
                               navigator.clipboard.writeText(optimizedResult);
-                              toast.success('AIM statement copied! 📋');
+                              toast.success('AIM statement copied');
                             }}
                             className="btn btn-ghost btn-sm" style={{ fontSize: 11, gap: 5 }}
                           >

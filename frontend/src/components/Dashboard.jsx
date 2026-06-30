@@ -80,12 +80,12 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
 
   const handleCreate = async (data) => {
     await jobsAPI.create(data);
-    toast.success('Application added! 🎉');
+    toast.success('Application added');
     fetchAll();
   };
   const handleUpdate = async (data) => {
     await jobsAPI.update(editingJob._id, data);
-    toast.success('Updated! ✅');
+    toast.success('Updated successfully');
     fetchAll();
   };
   const handleDelete = async (id, co) => {
@@ -96,7 +96,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
   };
   const handleStatusChange = async (id, status) => {
     await jobsAPI.update(id, { status });
-    toast.success(`→ ${status}`);
+    toast.success(`Status updated to ${status}`);
     fetchAll();
   };
   const handleDrawerJobUpdate = async (id, updatedFields) => {
@@ -154,17 +154,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
           <h1 style={{ fontSize: 25, fontWeight: 900, color: 'var(--text-1)', letterSpacing: '-0.5px', margin: 0 }}>My Application Dashboard</h1>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontWeight: 500 }}>Jan 12, 2023</span>
-          <div style={{ position: 'relative', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-            <Bell size={18} color="var(--text-2)" />
-            <span style={{ position: 'absolute', top: -1, right: -1, width: 6, height: 6, borderRadius: '50%', background: '#f43f5e' }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text-1)' }}>Alex R.</span>
-            <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', border: '1.5px solid rgba(255,255,255,0.1)' }}>
-              AR
-            </div>
-          </div>
+          <span style={{ fontSize: 13.5, color: 'var(--text-2)', fontWeight: 500 }}>{new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
         </div>
       </div>
 
@@ -709,7 +699,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
         jobDescription: job.jobDescription || 'No description provided.'
       });
       setAtsResult(data);
-      toast.success('ATS Scan Complete! 🎯');
+      toast.success('ATS scan complete');
     } catch {
       toast.error('ATS Scan failed.');
     }
@@ -725,7 +715,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
         jobDescription: job.jobDescription || 'No description provided.'
       });
       setTailorResult(data);
-      toast.success('Resume Tailoring Complete! ✨');
+      toast.success('Resume tailoring complete');
     } catch {
       toast.error('Resume tailoring failed.');
     }
@@ -742,7 +732,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
         jobDescription: job.jobDescription || 'No description provided.'
       });
       setReferralResult(data);
-      toast.success('Referral Outreach Strategy Ready! 🧠');
+      toast.success('Referral outreach strategy ready');
     } catch {
       toast.error('Failed to generate outreach strategy.');
     }
@@ -761,7 +751,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
         previousEmailSubject: `Application for ${job.role}`
       });
       setFollowupResult(data);
-      toast.success('Follow-up Email Drafted! 📬');
+      toast.success('Follow-up email drafted');
     } catch {
       toast.error('Failed to generate follow-up email.');
     }

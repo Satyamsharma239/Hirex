@@ -496,22 +496,16 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
         {job.applicationLink && (
-          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-            <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
-              <ExternalLink size={14} /> Apply Now
-            </a>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(job.applicationLink);
-                toast.success('Apply link copied! 📋');
-              }}
-              className="btn btn-ghost"
-              title="Copy Apply Link"
-              style={{ width: 42, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              📋
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(job.applicationLink);
+              toast.success('Apply link copied to clipboard! 📋');
+            }}
+            className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', display: 'flex', gap: 6, alignItems: 'center' }}
+          >
+            <Copy size={14} /> Copy Apply Link
+          </button>
         )}
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>

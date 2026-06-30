@@ -381,7 +381,7 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
 }
 
 // ── Job Card ───────────────────────────────────────────────────────
-function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
+function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave, onApply }) {
   const comp = job.company.toLowerCase().trim();
   
   let logoBg = job.logoColor || '#00c9a7';
@@ -496,11 +496,13 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-        {job.applicationLink && (
-          <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 700, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center', borderRadius: 10, fontSize: 13 }}>
-            <ExternalLink size={14} /> Apply on Company Site
-          </a>
-        )}
+        <button 
+          onClick={(e) => { e.stopPropagation(); onApply(job); }} 
+          className="btn btn-primary" 
+          style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 700, padding: '10px', display: 'flex', gap: 6, alignItems: 'center', borderRadius: 10, fontSize: 13 }}
+        >
+          <Zap size={14} /> 1-Click Apply
+        </button>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
             <Send size={13} /> Outreach
@@ -515,7 +517,7 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave }) {
 }
 
 // ── Job Detail Panel ───────────────────────────────────────────────
-function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGhostRate, onFollowup, onInterview, resumeAnalyzed }) {
+function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGhostRate, onFollowup, onInterview, resumeAnalyzed, onApply }) {
   const [saving, setSaving]       = useState(false);
   const [intel, setIntel]         = useState(null);
   const [intelLoad, setIntelLoad] = useState(false);
@@ -763,22 +765,13 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
 
       <div style={{ padding:'12px 18px', borderTop:'1px solid var(--border)', display:'flex', flexDirection:'column', gap:8 }}>
         {job.applicationLink && (
-          <div style={{ display: 'flex', gap: 8, width: '100%' }}>
-            <a href={job.applicationLink} target="_blank" rel="noopener noreferrer" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '10px', textDecoration: 'none', display: 'flex', gap: 6, alignItems: 'center' }}>
-              <ExternalLink size={14} /> Apply to Original Post
-            </a>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(job.applicationLink);
-                toast.success('Apply link copied');
-              }}
-              className="btn btn-ghost"
-              title="Copy Apply Link"
-              style={{ width: 42, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              📋
-            </button>
-          </div>
+          <button 
+            onClick={() => onApply(job)}
+            className="btn btn-primary" 
+            style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 800, padding: '12px', display: 'flex', gap: 6, alignItems: 'center', borderRadius: 10, fontSize: 13 }}
+          >
+            <Zap size={14} /> 1-Click Apply
+          </button>
         )}
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={handleSave} disabled={saving} className="btn btn-ghost" style={{ flex:1 }}>
@@ -895,6 +888,22 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
     } else {
       setSavedJobs(prev => [...prev, job.id]);
       await handleSaveJob(job);
+    }
+  };
+
+  const handleApplyJob = async (job) => {
+    // Simulate application and save as Applied
+    try {
+      await jobsAPI.create({
+        company: job.company, role: job.title, status: 'Applied',
+        location: job.location, salary: job.salary,
+        notes: `Source: Job Discovery (1-Click Apply)\nHR Email: ${job.hrEmail || 'N/A'}`,
+        appliedDate: new Date().toISOString().split('T')[0],
+        jobDescription: [job.description, ...(job.responsibilities||[])].join('\n'),
+      });
+      toast.success(`Successfully applied to ${job.company} via HireX`);
+    } catch {
+      toast.error('Failed to submit application');
     }
   };
 
@@ -1022,6 +1031,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
                   onSimulate={(j) => onSimulateInterview && onSimulateInterview(j.company, j.title, j.description || j.responsibilities?.join('\n') || '')}
                   isSaved={savedJobs.includes(job.id)}
                   onToggleSave={handleToggleSave}
+                  onApply={handleApplyJob}
                 />
               ))}
             </div>

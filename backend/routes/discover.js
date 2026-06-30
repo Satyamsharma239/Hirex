@@ -268,13 +268,20 @@ async function findRealHREmail(companyName) {
   };
 }
 
-async function fetchSerpApiJobs(role, location, experience, page = 1) {
+async function fetchSerpApiJobs(role, location, experience, page = 1, maxDaysOld = null) {
   const apiKey = process.env.SERPAPI_API_KEY;
   if (!apiKey || apiKey === 'your_serpapi_api_key') return [];
   try {
     const query = `${role} in ${location || 'India'}`;
     const start = (page - 1) * 10;
-    const url = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&start=${start}&api_key=${apiKey}`;
+    let url = `https://serpapi.com/search.json?engine=google_jobs&q=${encodeURIComponent(query)}&start=${start}&api_key=${apiKey}`;
+    if (maxDaysOld === 1) {
+      url += '&chips=date_posted:today';
+    } else if (maxDaysOld === 7) {
+      url += '&chips=date_posted:week';
+    } else if (maxDaysOld === 30) {
+      url += '&chips=date_posted:month';
+    }
     const res = await fetch(url);
     if (!res.ok) return [];
     const data = await res.json();
@@ -743,17 +750,6 @@ router.post('/jobs', async (req, res) => {
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    });
-
-    // Enforce freshness so jobs don't get hidden by frontend filters due to stale free-API data
-    jobs = jobs.map(j => {
-      const maxAgeMs = (maxDaysOld || 30) * 24 * 60 * 60 * 1000;
-      const ageMs = Date.now() - (j.createdTime || 0);
-      if (ageMs > maxAgeMs || !j.createdTime) {
-        j.createdTime = Date.now() - Math.random() * (maxDaysOld ? maxAgeMs : (7 * 24 * 60 * 60 * 1000));
-        j.posted = getRelativeTime(new Date(j.createdTime).toISOString());
-      }
-      return j;
     });
 
     if (jobs.length === 0) {

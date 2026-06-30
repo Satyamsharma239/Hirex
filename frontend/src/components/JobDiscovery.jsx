@@ -812,6 +812,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
   const [typeFilter, setTypeFilter]   = useState('Any');
   const [timeFilter, setTimeFilter]   = useState('Any Time');
   const [savedJobs, setSavedJobs]     = useState([]);
+  const [applyingJob, setApplyingJob] = useState(null);
 
   useEffect(() => {
     if (initialRole) {
@@ -903,19 +904,27 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
     }
   };
 
-  const handleApplyJob = async (job) => {
-    // Simulate application and save as Applied
+  const handleApplyJob = (job) => {
+    if (!job.applicationLink) {
+      toast.error('No application link available for this job');
+      return;
+    }
+    setApplyingJob(job);
+  };
+
+  const confirmApplyJob = async (job) => {
     try {
       await jobsAPI.create({
         company: job.company, role: job.title, status: 'Applied',
         location: job.location, salary: job.salary,
-        notes: `Source: Job Discovery (1-Click Apply)\nHR Email: ${job.hrEmail || 'N/A'}`,
+        notes: `Source: Job Discovery (Application Portal)\nHR Email: ${job.hrEmail || 'N/A'}\nApplication Link: ${job.applicationLink}`,
         appliedDate: new Date().toISOString().split('T')[0],
         jobDescription: [job.description, ...(job.responsibilities||[])].join('\n'),
       });
-      toast.success(`Successfully applied to ${job.company} via HireX`);
+      toast.success(`Successfully recorded application to ${job.company}`);
+      setApplyingJob(null);
     } catch {
-      toast.error('Failed to submit application');
+      toast.error('Failed to save to tracker');
     }
   };
 
@@ -1092,13 +1101,78 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
           onClose={() => setGhostJob(null)}
         />
       )}
-      {followupJob && (
-        <FollowupEngine
-          job={followupJob}
-          userProfile={userProfile}
-          onClose={() => setFollowupJob(null)}
-        />
+
+      {/* Application Portal Modal */}
+      {applyingJob && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ margin: 'auto', width: '90%', maxWidth: 1000, height: '90vh', background: 'var(--bg-card)', borderRadius: 16, border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}>
+            
+            {/* Header */}
+            <div style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.02)' }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, margin: '0 0 4px 0', color: '#fff' }}>Applying to {applyingJob.company}</h3>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--text-2)' }}>Submit your authentic application. If the form below doesn't load, use the secure window.</p>
+              </div>
+              <button onClick={() => setApplyingJob(null)} style={{ background: 'none', border: 'none', color: 'var(--text-2)', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content Area */}
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              
+              {/* Left Side: Auto-Fill Copier */}
+              <div style={{ width: 300, borderRight: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', padding: 24, overflowY: 'auto' }}>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--teal)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 16 }}>Your Data Vault</h4>
+                <p style={{ fontSize: 12, color: 'var(--text-2)', marginBottom: 24, lineHeight: 1.5 }}>
+                  Click to copy your details and paste them into the application form.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[
+                    { label: 'Full Name', value: resumeData?.name || 'Priya Sharma' },
+                    { label: 'Email', value: resumeData?.contact?.email || 'priya@example.com' },
+                    { label: 'Phone', value: resumeData?.contact?.phone || '+91 9876543210' },
+                    { label: 'LinkedIn URL', value: resumeData?.contact?.linkedin || 'linkedin.com/in/priyasharma' },
+                    { label: 'Portfolio / GitHub', value: resumeData?.contact?.github || 'github.com/priyacodes' },
+                  ].map(item => (
+                    <div key={item.label}>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4, fontWeight: 600 }}>{item.label}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <div style={{ flex: 1, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-glass)', borderRadius: 6, fontSize: 13, color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {item.value}
+                        </div>
+                        <button onClick={() => { navigator.clipboard.writeText(item.value); toast.success('Copied!'); }} style={{ padding: '0 12px', background: 'var(--bg-glass)', border: '1px solid var(--border-glass)', borderRadius: 6, color: '#fff', cursor: 'pointer' }}>
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <button onClick={() => confirmApplyJob(applyingJob)} style={{ width: '100%', marginTop: 32, padding: '12px', background: 'linear-gradient(135deg, #00c9a7, #0891b2)', color: '#000', fontWeight: 700, borderRadius: 8, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <CheckCircle2 size={18} /> Mark as Applied
+                </button>
+              </div>
+
+              {/* Right Side: Application Webview */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fff' }}>
+                <div style={{ padding: '12px 20px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <AlertCircle size={14} /> Some companies block embedded browsers.
+                  </div>
+                  <button onClick={() => window.open(applyingJob.applicationLink, 'HireXApplication', 'width=1000,height=800,scrollbars=yes')} style={{ padding: '6px 16px', background: '#3b82f6', color: '#fff', borderRadius: 6, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ExternalLink size={14} /> Open Secure Window
+                  </button>
+                </div>
+                <iframe src={applyingJob.applicationLink} style={{ flex: 1, width: '100%', border: 'none' }} title="Application Portal" sandbox="allow-same-origin allow-scripts allow-forms allow-popups" />
+              </div>
+
+            </div>
+          </div>
+        </div>
       )}
+
       {interviewJob && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setInterviewJob(null)}>
           <div className="modal-box" style={{ maxWidth: 600, padding: 0, overflow: 'hidden' }}>

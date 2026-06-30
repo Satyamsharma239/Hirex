@@ -373,6 +373,7 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
               Full pitch text
             </span>
           </div>
+          </div>
         </div>
       </div>
     </div>

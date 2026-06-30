@@ -217,17 +217,16 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
               <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>
                 {loading ? '—' : <CountUp to={interviewCount} />}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--amber)', marginTop: 4, fontWeight: 600 }}>
-                Active Prep
+              <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 4, fontWeight: 600 }}>
+                {interviewRate}% conversion
               </div>
             </div>
             <div style={{ width: 64, height: 64, position: 'relative' }}>
               <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-          <div className="premium-text" style={{ fontSize: 36, fontWeight: 900, lineHeight: 1 }}>
-            {loading ? '—' : <CountUp to={interviewCount} />}
-          </div>
-          <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 4, fontWeight: 600 }}>
-            {interviewRate}% conversion
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(245,158,11,0.2)" strokeWidth="3" />
+                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f59e0b" strokeWidth="3" strokeDasharray={`${interviewRate}, 100`} strokeLinecap="round" style={{ filter: 'drop-shadow(0 0 4px rgba(245,158,11,0.5))' }} />
+              </svg>
+            </div>
           </div>
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', marginTop: 8 }}>
             <svg viewBox="0 0 100 30" style={{ width: '100%', height: 35, overflow: 'visible' }}>

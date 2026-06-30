@@ -134,9 +134,22 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
   const pendingOfferCount = Math.max(0, offeredCount - acceptedOfferCount);
 
   return (
-    <div className="page-enter" style={{ padding: '28px 28px 40px' }}>
-      {/* Dashboard Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
+    <div className="page-enter" style={{ padding: '28px 28px 40px', minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #1e1b4b 0%, #09090b 70%)', position: 'relative', overflow: 'hidden' }}>
+      <style dangerouslySetInnerHTML={{__html: `
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes floatOrb { 0% { transform: translateY(0px) translateX(0px); } 50% { transform: translateY(-20px) translateX(10px); } 100% { transform: translateY(0px) translateX(0px); } }
+        @keyframes glowPulse { 0% { box-shadow: 0 0 5px rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 15px rgba(255,255,255,0.2); } 100% { box-shadow: 0 0 5px rgba(255,255,255,0.1); } }
+        .glass-card { background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); border-radius: 16px; }
+        .glass-card:hover { border-color: rgba(255,255,255,0.2); transform: translateY(-2px); transition: all 0.3s ease; }
+        .premium-text { background: linear-gradient(135deg, #f8fafc, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .kanban-col { background: rgba(0,0,0,0.2) !important; border: 1px solid rgba(255,255,255,0.05) !important; border-radius: 16px !important; }
+      `}} />
+      <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: 500, height: 500, background: 'rgba(56, 189, 248, 0.05)', filter: 'blur(100px)', borderRadius: '50%', animation: 'floatOrb 15s infinite ease-in-out', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: 600, height: 600, background: 'rgba(236, 72, 153, 0.05)', filter: 'blur(120px)', borderRadius: '50%', animation: 'floatOrb 20s infinite ease-in-out reverse', pointerEvents: 'none' }} />
+      
+      <div style={{ position: 'relative', zIndex: 10 }}>
+        {/* Dashboard Top Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
         <div>
           <h1 style={{ fontSize: 25, fontWeight: 900, color: 'var(--text-1)', letterSpacing: '-0.5px', margin: 0 }}>My Application Dashboard</h1>
         </div>
@@ -172,14 +185,14 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, marginBottom: 24 }}>
-        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: 210, padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>TOTAL APPLICATIONS</span>
             <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
               <SlidersHorizontal size={14} color="var(--text-3)" />
             </button>
           </div>
-          <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-1)', lineHeight: 1 }}>
+          <div className="premium-text" style={{ fontSize: 36, fontWeight: 900, lineHeight: 1 }}>
             {loading ? '—' : <CountUp to={appliedCount} />}
           </div>
           <div style={{ fontSize: 12, color: 'var(--teal)', marginTop: 4, fontWeight: 600 }}>
@@ -190,7 +203,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
               <path d="M 0 25 Q 15 15 30 18 T 60 5 T 90 12 T 100 8" fill="none" stroke="var(--teal)" strokeWidth="2.5" strokeLinecap="round" style={{ filter: 'drop-shadow(0px 2px 6px rgba(0,201,167,0.4))' }} />
             </svg>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10, marginTop: 8 }}>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Sent</span>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{appliedCount}</div>
@@ -202,7 +215,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
           </div>
         </div>
 
-        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: 210, padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>INTERVIEWS SCHEDULED</span>
             <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
@@ -220,27 +233,26 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
             </div>
             <div style={{ width: 64, height: 64, position: 'relative' }}>
               <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="3" />
-                <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="var(--amber)" strokeWidth="3" strokeDasharray={`${interviewRate}, 100`} strokeLinecap="round" style={{ filter: 'drop-shadow(0px 0px 6px rgba(245,158,11,0.3))' }} />
-              </svg>
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: 'var(--text-1)' }}>
-                {interviewRate}%
-              </div>
-            </div>
+          <div className="premium-text" style={{ fontSize: 36, fontWeight: 900, lineHeight: 1 }}>
+            {loading ? '—' : <CountUp to={interviewCount} />}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10, marginTop: 8 }}>
+          <div style={{ fontSize: 12, color: '#f59e0b', marginTop: 4, fontWeight: 600 }}>
+            {interviewRate}% conversion
+          </div>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', marginTop: 8 }}>
+            <svg viewBox="0 0 100 30" style={{ width: '100%', height: 35, overflow: 'visible' }}>
+              <path d="M 0 25 L 20 20 L 40 22 L 60 15 L 80 18 L 100 5" fill="none" stroke="#f59e0b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0px 2px 6px rgba(245,158,11,0.4))' }} />
+            </svg>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10, marginTop: 8 }}>
             <div>
               <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Upcoming</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{interviewCount}</div>
-            </div>
-            <div>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Pending</span>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{savedCount}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginTop: 2 }}>{Math.max(0, interviewCount - offeredCount - rejectedCount)}</div>
             </div>
           </div>
         </div>
 
-        <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', height: 210 }}>
+        <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', height: 210, padding: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px' }}>OFFERS RECEIVED</span>
             <button className="btn-icon" style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, height: 'auto', width: 'auto' }}>
@@ -532,23 +544,24 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
               const columnJobs = filtered.filter(j => j.status === status);
               const meta = STATUS_META[status];
               return (
-                <div key={status}
-                  onDragOver={e => { e.preventDefault(); e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-                  onDragLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                  <div key={status}
+                  className="kanban-col"
+                  onDragOver={e => { e.preventDefault(); e.currentTarget.style.boxShadow = 'inset 0 0 0 2px rgba(255,255,255,0.2)'; }}
+                  onDragLeave={e => { e.currentTarget.style.boxShadow = 'none'; }}
                   onDrop={e => {
                     e.preventDefault();
-                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.boxShadow = 'none';
                     const id = e.dataTransfer.getData('jobId');
                     if (id) handleStatusChange(id, status);
                   }}
-                  style={{ flex: '0 0 280px', minHeight: 200, background: 'transparent', borderRadius: 12, transition: 'background 0.2s', display: 'flex', flexDirection: 'column', gap: 12 }}
+                  style={{ flex: '0 0 280px', minHeight: 200, padding: 12, display: 'flex', flexDirection: 'column', gap: 12, transition: 'all 0.2s' }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', marginBottom: 4 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: meta.dot, boxShadow: `0 0 8px ${meta.dot}60` }} />
                       <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>{status}</span>
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', background: 'var(--bg-surface)', padding: '2px 8px', borderRadius: 12 }}>{columnJobs.length}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-1)', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: 12 }}>{columnJobs.length}</span>
                   </div>
                   
                   {columnJobs.map(job => (
@@ -560,11 +573,11 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
                           setSelectedJob(job);
                         }
                       }}
-                      className="card"
-                      style={{ padding: 16, cursor: 'pointer', background: 'var(--bg-surface)', border: '1px solid var(--border)' }}
+                      className="glass-card"
+                      style={{ padding: 16, cursor: 'pointer', border: '1px solid rgba(255,255,255,0.08)', animation: 'fadeInUp 0.3s ease-out' }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>{job.company}</div>
+                        <div className="premium-text" style={{ fontWeight: 700, fontSize: 15 }}>{job.company}</div>
                       </div>
                       <div style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 12 }}>{job.role}</div>
                       
@@ -638,6 +651,7 @@ export default function Dashboard({ onNavigate, resumeText, resumeData, onSimula
           onSimulateInterview={onSimulateInterview}
         />
       )}
+      </div>
     </div>
   );
 }

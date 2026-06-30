@@ -203,10 +203,10 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
   const wordCount = pitchText.split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ zIndex: 100 }}>
-      <div className="modal-box" style={{ maxWidth: 660, width: '95%', background: '#0a1628', border: '1px solid rgba(0, 201, 167, 0.3)', boxShadow: '0 0 30px rgba(0, 201, 167, 0.15)', padding: 24, borderRadius: 16 }}>
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()} style={{ zIndex: 100, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)' }}>
+      <div className="modal-box" style={{ maxWidth: 660, width: '95%', background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255, 255, 255, 0.1)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)', padding: 0, borderRadius: 16, overflow: 'hidden' }}>
         {/* Title bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ fontSize: 18 }}>🤖</div>
             <h2 style={{ fontSize: 16.5, fontWeight: 800, margin: 0, color: 'var(--text-1)' }}>Compose Personalized Outreach</h2>
@@ -216,8 +216,9 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
           </div>
         </div>
 
+        <div style={{ padding: 24 }}>
         {/* Form Fields */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
           {[
             { label: 'Company Name', val: companyName, setVal: setCompanyName, field: 'company' },
             { label: 'Target Recruiter', val: recruiter, setVal: setRecruiter, field: 'recruiter' },
@@ -225,9 +226,9 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
             { label: 'HR Email', val: hrEmail, setVal: setHrEmail, field: 'hrEmail' }
           ].map(f => (
             <div key={f.label} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 100px', gap: 12, alignItems: 'center' }}>
-              <span style={{ fontSize: 13, color: 'var(--text-2)', fontWeight: 600 }}>{f.label}</span>
-              <input value={f.val} onChange={e => f.setVal(e.target.value)} className="inp" style={{ height: 38, border: '1px solid rgba(0, 201, 167, 0.2)', background: 'rgba(6, 13, 26, 0.4)' }} />
-              <button onClick={() => handleAutoFill(f.field)} className="btn btn-ghost btn-sm" style={{ height: 38, fontSize: 11.5, borderColor: 'rgba(0, 201, 167, 0.15)', color: 'var(--teal)', gap: 4 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 600 }}>{f.label}</span>
+              <input value={f.val} onChange={e => f.setVal(e.target.value)} className="inp" style={{ height: 38, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'var(--text-1)' }} />
+              <button onClick={() => handleAutoFill(f.field)} className="btn btn-ghost btn-sm" style={{ height: 38, fontSize: 11.5, borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-2)', gap: 4 }}>
                 🔄 Auto-Fill
               </button>
             </div>
@@ -235,15 +236,21 @@ function EmailModal({ job, userProfile, resumeData, resumeText, onClose }) {
         </div>
 
         {/* Pitch Area */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 8 }}>Generated Pitch Draft</div>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-3)', letterSpacing: '0.8px', marginBottom: 12, textTransform: 'uppercase' }}>Generated Pitch Draft</div>
           {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '60px 0', border: '1px solid rgba(0,201,167,0.2)', borderRadius: 12, background: 'rgba(6, 13, 26, 0.4)' }}>
-              <div className="spinner spinner-teal" style={{ width: 32, height: 32 }} />
-              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Writing personalized pitch...</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, padding: '40px 24px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 12, background: 'rgba(0,0,0,0.2)' }}>
+              <div style={{ height: 16, width: '40%', background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '400% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 4 }}></div>
+              <div style={{ height: 16, width: '90%', background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '400% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 4 }}></div>
+              <div style={{ height: 16, width: '85%', background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '400% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 4 }}></div>
+              <div style={{ height: 16, width: '60%', background: 'linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%)', backgroundSize: '400% 100%', animation: 'shimmer 1.5s infinite', borderRadius: 4 }}></div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                <Sparkles size={14} color="var(--teal)" style={{ animation: 'pulse 2s infinite' }} />
+                <span style={{ fontSize: 13, color: 'var(--text-3)', fontWeight: 500, fontStyle: 'italic' }}>AI is typing your personalized pitch...</span>
+              </div>
             </div>
           ) : (
-            <div style={{ border: '1px solid #00c9a7', borderRadius: 12, background: 'rgba(6, 13, 26, 0.4)', padding: 16 }}>
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, background: 'rgba(0,0,0,0.3)', padding: 20 }}>
               <textarea
                 value={pitchText}
                 onChange={e => setPitchText(e.target.value)}
@@ -550,7 +557,7 @@ function JobDetailPanel({ job, onClose, onSave, userProfile, onWriteEmail, onGho
   );
 
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid rgba(0,201,167,0.2)', borderRadius: 18, overflow: 'hidden', position: 'sticky', top: 20 }}>
+    <div style={{ background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, overflow: 'hidden', position: 'sticky', top: 20, boxShadow: '0 10px 30px -10px rgba(0,0,0,0.5)' }}>
       {/* Header */}
       <div style={{ padding: '20px 22px 16px', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>

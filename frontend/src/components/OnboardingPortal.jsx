@@ -121,8 +121,9 @@ June 2025 - Present | Remote, India
     if (!contact.name || contact.name.trim().length < 2) {
       return toast.error('Please enter your full name');
     }
-    if (!contact.email || !contact.email.includes('@') || contact.email.trim().length < 5) {
-      return toast.error('Please enter a valid email address');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!contact.email || !emailRegex.test(contact.email)) {
+      return toast.error('Please enter a valid email');
     }
     if (!contact.phone || contact.phone.trim().replace(/[^0-9]/g, '').length < 8) {
       return toast.error('Please enter a valid mobile number (min 8 digits)');

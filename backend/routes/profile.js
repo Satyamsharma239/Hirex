@@ -5,7 +5,17 @@ const Profile = require('../models/profile');
 // POST /api/profile
 router.post('/', async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, contact } = req.body;
+    
+    // Email Validation
+    const email = contact?.email || req.body.email;
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email' });
+      }
+    }
+
     let profile = await Profile.findOne({ username });
     if (profile) {
       profile = await Profile.findOneAndUpdate({ username }, req.body, { new: true });

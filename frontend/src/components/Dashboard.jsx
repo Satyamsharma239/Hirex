@@ -700,7 +700,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
       setAtsResult(data);
       toast.success('ATS scan complete');
     } catch {
-      toast.error('ATS Scan failed.');
+      toast.error('ATS Scan failed. Please check your internet connection and try again.');
     }
     setAtsLoading(false);
   };
@@ -716,7 +716,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
       setTailorResult(data);
       toast.success('Resume tailoring complete');
     } catch {
-      toast.error('Resume tailoring failed.');
+      toast.error('Resume tailoring failed. Please ensure your backend is reachable and try again.');
     }
     setTailorLoading(false);
   };
@@ -733,7 +733,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
       setReferralResult(data);
       toast.success('Referral outreach strategy ready');
     } catch {
-      toast.error('Failed to generate outreach strategy.');
+      toast.error('Unable to generate outreach strategy. Please check your internet connection and try again.');
     }
     setReferralLoading(false);
   };
@@ -752,7 +752,7 @@ function JobDetailsDrawer({ job, onClose, resumeText, resumeData, onUpdate, onDe
       setFollowupResult(data);
       toast.success('Follow-up email drafted');
     } catch {
-      toast.error('Failed to generate follow-up email.');
+      toast.error('Unable to generate follow-up email. Please check your internet connection and try again.');
     }
     setFollowupLoading(false);
   };

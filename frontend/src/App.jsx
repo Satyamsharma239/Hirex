@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { Toaster } from 'react-hot-toast';
 import Sidebar from './components/Sidebar';
-import Dashboard from './components/Dashboard';
-import ResumeProfile from './components/ResumeProfile';
-import JobDiscovery from './components/JobDiscovery';
-import PublicProfile from './components/PublicProfile';
-import OnboardingPortal from './components/OnboardingPortal';
-import ConsoleOverview from './components/ConsoleOverview';
-import InterviewPrep from './components/InterviewPrep';
 import { Menu, Compass, ChevronRight, CheckCircle2 } from 'lucide-react';
+
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const ResumeProfile = lazy(() => import('./components/ResumeProfile'));
+const JobDiscovery = lazy(() => import('./components/JobDiscovery'));
+const PublicProfile = lazy(() => import('./components/PublicProfile'));
+const OnboardingPortal = lazy(() => import('./components/OnboardingPortal'));
+const ConsoleOverview = lazy(() => import('./components/ConsoleOverview'));
+const InterviewPrep = lazy(() => import('./components/InterviewPrep'));
+
+// Loading Fallback Component
+const PageLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
+    <div className="spinner spinner-teal" style={{ width: 30, height: 30, borderWidth: 3 }}></div>
+  </div>
+);
 
 const defaultBrand = {
   name: "Satyam Sharma",
@@ -222,7 +230,11 @@ export default function App() {
   };
 
   if (isPublicRoute) {
-    return <PublicProfile />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <PublicProfile />
+      </Suspense>
+    );
   }
 
   if (!resumeText) {
@@ -238,7 +250,9 @@ export default function App() {
           success: { iconTheme: { primary: '#00c9a7', secondary: '#0d1f38' } },
           error:   { iconTheme: { primary: '#f43f5e', secondary: '#0d1f38' } },
         }} />
-        <OnboardingPortal onComplete={handleUpdateProfile} />
+        <Suspense fallback={<PageLoader />}>
+          <OnboardingPortal onComplete={handleUpdateProfile} />
+        </Suspense>
       </>
     );
   }
@@ -289,7 +303,9 @@ export default function App() {
           </div>
         </header>
 
-        <main>{renderPage()}</main>
+        <Suspense fallback={<PageLoader />}>
+          <main>{renderPage()}</main>
+        </Suspense>
       </div>
 
       <style>{`

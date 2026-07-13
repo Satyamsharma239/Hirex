@@ -156,6 +156,12 @@ Score this answer and return JSON:
     "fillerCount": <count of typical speech filler words like 'um', 'ah', 'like', 'basically', 'you know' in candidate answer>,
     "fillersUsed": ["<filler word 1>", "<filler word 2>"],
     "communicationTone": "<Confident, Technical, Conversational, or Hesitant depending on answer structure>"
+  },
+  "starBreakdown": {
+    "situation": {"score": <0-25>, "feedback": "<did they set context?>"},
+    "task": {"score": <0-25>, "feedback": "<did they explain their responsibility?>"},
+    "action": {"score": <0-25>, "feedback": "<did they describe specific actions?>"},
+    "result": {"score": <0-25>, "feedback": "<did they quantify outcomes?>"}
   }
 }`;
 

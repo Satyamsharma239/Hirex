@@ -573,6 +573,29 @@ export default function InterviewSim({ company, role, jobDescription, resumeData
                   )}
                 </div>
 
+                {r.starBreakdown && (
+                  <div style={{ padding: '12px 14px', background: 'rgba(139,92,246,0.03)', borderRadius: 10, border: '1px solid rgba(139,92,246,0.12)', marginBottom: 16 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#8b5cf6', display: 'block', marginBottom: 10, letterSpacing: '0.5px' }}>⭐ STAR METHOD BREAKDOWN</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+                      {[{key:'situation',label:'S',color:'#3b82f6',title:'Situation'},{key:'task',label:'T',color:'#8b5cf6',title:'Task'},{key:'action',label:'A',color:'#f59e0b',title:'Action'},{key:'result',label:'R',color:'#10b981',title:'Result'}].map(item => {
+                        const star = r.starBreakdown[item.key];
+                        if (!star) return null;
+                        return (
+                          <div key={item.key} style={{ padding: '10px', background: `${item.color}08`, borderRadius: 8, border: `1px solid ${item.color}20`, textAlign: 'center' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: `${item.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 6px', fontSize: 14, fontWeight: 900, color: item.color }}>{item.label}</div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: item.color, letterSpacing: '0.5px', marginBottom: 4 }}>{item.title}</div>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--text-1)' }}>{star.score}<span style={{ fontSize: 10, color: 'var(--text-3)' }}>/25</span></div>
+                            <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 2, marginTop: 6, overflow: 'hidden' }}>
+                              <div style={{ width: `${(star.score / 25) * 100}%`, height: '100%', background: item.color, borderRadius: 2 }} />
+                            </div>
+                            <p style={{ fontSize: 10.5, color: 'var(--text-3)', margin: '6px 0 0', lineHeight: 1.3 }}>{star.feedback}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {r.deliveryAnalytics && (
                   <div style={{ padding: '12px 14px', background: 'rgba(59,130,246,0.03)', borderRadius: 10, border: '1px solid rgba(59,130,246,0.12)' }}>
                     <span style={{ fontSize: 10, fontWeight: 800, color: '#3b82f6', display: 'block', marginBottom: 8, letterSpacing: '0.5px', textTransform: 'uppercase' }}>🎙️ Speech & Delivery Metrics</span>

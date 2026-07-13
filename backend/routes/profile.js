@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Profile = require('../models/profile');
 
-// POST /api/profile
+/**
+ * POST /api/profile
+ * Creates or updates a user profile
+ * @param {Object} req.body - Profile data payload
+ */
 router.post('/', async (req, res) => {
   try {
     const { username, contact } = req.body;
@@ -28,7 +32,11 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/profile/:username
+/**
+ * GET /api/profile/:username
+ * Retrieves a user profile by username
+ * @param {string} req.params.username - Target username
+ */
 router.get('/:username', async (req, res) => {
   try {
     const profile = await Profile.findOne({ username: req.params.username });

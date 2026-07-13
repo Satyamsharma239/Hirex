@@ -5,7 +5,7 @@ const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
 const { generate } = require('../services/geminiService');
 
-// ─── Multer ────────────────────────────────────────────────────────────────────
+// ─── File Upload Configuration (Multer) ───────────────────────────────────
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },

@@ -6,8 +6,8 @@ const { generate } = require('../services/geminiService');
 
 // ── Cache ──────────────────────────────────────────────────────────
 const cache    = new Map();
-const CACHE_MS = 20 * 60 * 1000; // 20 min
-const getCache = k => { const h = cache.get(k); if (!h) return null; if (Date.now() - h.ts > CACHE_MS) { cache.delete(k); return null; } return h.data; };
+const CACHE_DURATION_MS = process.env.CACHE_DURATION_MS || 20 * 60 * 1000; // Default 20 min
+const getCache = k => { const h = cache.get(k); if (!h) return null; if (Date.now() - h.ts > CACHE_DURATION_MS) { cache.delete(k); return null; } return h.data; };
 const setCache = (k, d) => cache.set(k, { data: d, ts: Date.now() });
 
 const toArr = x => Array.isArray(x) ? x : (x?.jobs ? x.jobs : []);

@@ -280,15 +280,17 @@ June 2025 - Present | Remote, India
             We extracted these details from your resume. Please check and correct them so we can build your premium profile.
           </p>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 28 }} className="animate-stagger-fade-up">
             {[
-              { key: 'name', label: 'Full Name', placeholder: 'e.g. Satyam Sharma' },
-              { key: 'email', label: 'Email Address', placeholder: 'e.g. name@email.com' },
-              { key: 'phone', label: 'Mobile Number', placeholder: 'e.g. +91 98765 43210' },
-              { key: 'linkedin', label: 'LinkedIn Profile URL', placeholder: 'e.g. linkedin.com/in/username' },
-              { key: 'github', label: 'GitHub Profile URL', placeholder: 'e.g. github.com/username' },
-            ].map(field => (
-              <div key={field.key}>
+              { key: 'name', label: 'Full Name', placeholder: 'e.g. Satyam Sharma', val: val => val.length >= 2 },
+              { key: 'email', label: 'Email Address', placeholder: 'e.g. name@email.com', val: val => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) },
+              { key: 'phone', label: 'Mobile Number', placeholder: 'e.g. +91 98765 43210', val: val => val.replace(/[^0-9]/g, '').length >= 8 },
+              { key: 'linkedin', label: 'LinkedIn Profile URL', placeholder: 'e.g. linkedin.com/in/username', val: val => val.length > 5 },
+              { key: 'github', label: 'GitHub Profile URL', placeholder: 'e.g. github.com/username', val: val => val.length > 3 },
+            ].map(field => {
+              const isValid = contact[field.key] ? field.val(contact[field.key]) : false;
+              return (
+              <div key={field.key} style={{ position: 'relative' }}>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {field.label}
                 </label>
@@ -298,10 +300,13 @@ June 2025 - Present | Remote, India
                   onChange={e => setContact({ ...contact, [field.key]: e.target.value })}
                   className="inp"
                   placeholder={field.placeholder}
-                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', borderColor: 'var(--border)', color: 'var(--text-1)' }}
+                  style={{ width: '100%', background: 'rgba(0,0,0,0.2)', borderColor: isValid ? 'rgba(0,201,167,0.4)' : 'var(--border)', color: 'var(--text-1)', paddingRight: isValid ? 36 : 16, transition: 'all 0.2s' }}
                 />
+                {isValid && (
+                  <CheckCircle2 size={16} color="var(--teal)" style={{ position: 'absolute', right: 12, top: 31, animation: 'fadeInSlideUp 0.3s forwards' }} />
+                )}
               </div>
-            ))}
+            )})}
           </div>
           
           <div style={{ display: 'flex', gap: 12 }}>
@@ -439,33 +444,47 @@ June 2025 - Present | Remote, India
             </h3>
 
             {/* Step Indicators */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 320, margin: '0 auto', textAlign: 'left' }}>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 320, margin: '0 auto', textAlign: 'left' }} className="animate-stagger-fade-up">
+              
+              {/* Connected Progress Line */}
+              <div style={{ position: 'absolute', left: 7, top: 12, bottom: 12, width: 2, background: 'rgba(255,255,255,0.05)', zIndex: 0, borderRadius: 2 }}>
+                 <div style={{ width: '100%', background: 'var(--teal)', transition: 'height 0.4s ease', height: `${Math.min(100, Math.max(0, (step - 1) * 33.33))}%`, borderRadius: 2, boxShadow: '0 0 8px var(--teal-glow)' }} />
+              </div>
+              
               {[
-                { s: 1, label: 'Resume Parser' },
-                { s: 2, label: 'Career DNA & Readiness Matrix' },
+                { s: 1, label: 'Resume Parser AI' },
+                { s: 2, label: 'Career DNA Matrix' },
                 { s: 3, label: 'Personal Brand Card' },
-                { s: 4, label: 'Recruiter ATS formatting check' }
+                { s: 4, label: 'Recruiter ATS Scan' }
               ].map((item) => {
                 const isActive = step === item.s;
                 const isCompleted = step > item.s;
                 
                 return (
                   <div key={item.s} style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    opacity: isCompleted || isActive ? 1 : 0.35,
-                    transition: 'all 0.3s'
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    opacity: isCompleted || isActive ? 1 : 0.4,
+                    transition: 'all 0.3s',
+                    position: 'relative',
+                    zIndex: 1
                   }}>
                     {isCompleted ? (
-                      <CheckCircle2 size={16} color="var(--teal)" />
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CheckCircle2 size={16} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 4px var(--teal-glow))' }} />
+                      </div>
                     ) : isActive ? (
-                      <RefreshCw size={15} color="var(--teal)" style={{ animation: 'spin 2s linear infinite' }} />
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <RefreshCw size={14} color="var(--teal)" style={{ animation: 'spin 2s linear infinite' }} />
+                      </div>
                     ) : (
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', border: '1.5px solid var(--border)' }} />
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid var(--border)', background: 'var(--bg-card)' }} />
                     )}
                     <span style={{
-                      fontSize: 13,
+                      fontSize: 13.5,
                       fontWeight: isActive || isCompleted ? 700 : 500,
-                      color: isActive ? 'var(--text-1)' : 'var(--text-2)'
+                      color: isActive ? 'var(--text-1)' : isCompleted ? 'var(--teal)' : 'var(--text-3)',
+                      transition: 'all 0.2s',
+                      transform: isActive ? 'scale(1.02) translateX(4px)' : 'none'
                     }}>{item.label}</span>
                   </div>
                 );

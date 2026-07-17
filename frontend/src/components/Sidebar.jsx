@@ -11,7 +11,7 @@ const NAV = [
   { id: 'dashboard', icon: Briefcase,       label: 'Job Tracker',     sub: 'Manage applications' }
 ];
 
-export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
+export default function Sidebar({ active, onNavigate, isOpen, onClose, resumeData }) {
   return (
     <>
       {isOpen && (
@@ -88,21 +88,30 @@ export default function Sidebar({ active, onNavigate, isOpen, onClose }) {
 
         <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
           <div style={{
-            background: 'linear-gradient(135deg, rgba(0,201,167,0.08), rgba(59,130,246,0.05))',
-            border: '1px solid var(--border-teal)',
-            borderRadius: 12, padding: '12px 14px',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-              <Zap size={13} color="var(--teal)" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--teal)' }}>Smart Analysis</span>
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border)',
+            borderRadius: 12, padding: '10px 12px',
+            display: 'flex', alignItems: 'center', gap: 10,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }} className="hover-card">
+            <div style={{ 
+              width: 34, height: 34, borderRadius: 10, 
+              background: 'linear-gradient(135deg, var(--teal), #3b82f6)', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontWeight: 800, color: '#fff', fontSize: 14,
+              boxShadow: '0 0 12px var(--teal-glow)'
+            }}>
+              {resumeData?.name ? resumeData.name.substring(0, 1).toUpperCase() : 'U'}
             </div>
-            <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.5 }}>
-              Intelligent analysis powered by advanced language models for accurate career insights.
-            </p>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--text-1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {resumeData?.name || 'User Profile'}
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--teal)', fontWeight: 700, letterSpacing: '0.5px' }}>
+                {resumeData ? 'PRO SUITE' : 'Setup Profile'}
+              </div>
+            </div>
           </div>
-          <p style={{ textAlign: 'center', fontSize: 10.5, color: 'var(--text-3)', marginTop: 10, opacity: 0.6 }}>
-            HireX v2.0 • Career Suite
-          </p>
         </div>
       </aside>
 

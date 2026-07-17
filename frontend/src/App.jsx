@@ -11,10 +11,20 @@ const OnboardingPortal = lazy(() => import('./components/OnboardingPortal'));
 const ConsoleOverview = lazy(() => import('./components/ConsoleOverview'));
 const InterviewPrep = lazy(() => import('./components/InterviewPrep'));
 
-// Loading Fallback Component
+// Premium Loading Fallback Component
 const PageLoader = () => (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh' }}>
-    <div className="spinner spinner-teal" style={{ width: 30, height: 30, borderWidth: 3 }}></div>
+  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '60vh', gap: 16 }}>
+    <div style={{
+      width: 48, height: 48, borderRadius: 14,
+      background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.15), rgba(139, 92, 246, 0.1))',
+      border: '1.5px solid var(--border-teal)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      boxShadow: '0 8px 24px rgba(0, 201, 167, 0.1)',
+      animation: 'pulse 2s infinite'
+    }}>
+      <div className="spinner spinner-teal" style={{ width: 24, height: 24, borderWidth: 3 }}></div>
+    </div>
+    <div className="skeleton-shimmer" style={{ width: 100, height: 6, borderRadius: 4 }}></div>
   </div>
 );
 
@@ -270,7 +280,7 @@ export default function App() {
         error:   { iconTheme: { primary: '#f43f5e', secondary: '#0d1f38' } },
       }} />
 
-      <Sidebar active={page} onNavigate={setPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar active={page} onNavigate={setPage} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} resumeData={resumeData} />
 
       <div style={{ marginLeft: 'var(--sidebar-w)', minHeight: '100vh', background: 'var(--bg-root)' }}>
         <header style={{
@@ -304,7 +314,7 @@ export default function App() {
         </header>
 
         <Suspense fallback={<PageLoader />}>
-          <main>{renderPage()}</main>
+          <main key={page} className="page-transition-enter">{renderPage()}</main>
         </Suspense>
       </div>
 

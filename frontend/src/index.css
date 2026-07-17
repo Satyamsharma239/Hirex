@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ═══════════════════════════════════════════════════════════════
@@ -19,8 +19,8 @@
   --teal-glow:   rgba(0, 201, 167, 0.35);
   --teal-glow-intense: 0 0 25px rgba(0, 201, 167, 0.35);
   --blue:        #3b82f6;
-  --blue-dim:    rgba(3b, 82, 246, 0.12);
-  --blue-glow:   rgba(3b, 82, 246, 0.35);
+  --blue-dim:    rgba(59, 130, 246, 0.12);
+  --blue-glow:   rgba(59, 130, 246, 0.35);
   --amber:       #f59e0b;
   --amber-dim:   rgba(245, 158, 11, 0.1);
   --rose:        #f43f5e;
@@ -41,7 +41,7 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg-root);
     color: var(--text-1);
     -webkit-font-smoothing: antialiased;
@@ -454,7 +454,89 @@
     margin-bottom: 4px;
   }
 
+  /* ── Missing Audit Classes ────────────────────────────────── */
+  .hover-card {
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+    border-color: var(--border-teal);
+  }
+  
+  .modal-content {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .xyz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+  }
+
+  .dna-dashboard-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .interview-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+  }
+
+  /* ── Skeleton Loading Shimmer ─────────────────────────────── */
+  .skeleton-shimmer {
+    background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+    background-size: 200% 100%;
+    animation: shimmer-loop 1.4s infinite sine.inOut; /* Using GSAP-like sine.inOut via standard CSS equivalent */
+    animation-timing-function: cubic-bezier(0.445, 0.05, 0.55, 0.95);
+    border-radius: 8px;
+  }
+
+  @keyframes shimmer-loop {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* ── Page & Card Animations ───────────────────────────────── */
+  .animate-stagger-fade-up > * {
+    opacity: 0;
+    animation: fadeUpStagger 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-stagger-fade-up > *:nth-child(1) { animation-delay: 0.08s; }
+  .animate-stagger-fade-up > *:nth-child(2) { animation-delay: 0.16s; }
+  .animate-stagger-fade-up > *:nth-child(3) { animation-delay: 0.24s; }
+  .animate-stagger-fade-up > *:nth-child(4) { animation-delay: 0.32s; }
+  .animate-stagger-fade-up > *:nth-child(5) { animation-delay: 0.40s; }
+  .animate-stagger-fade-up > *:nth-child(6) { animation-delay: 0.48s; }
+
+  @keyframes fadeUpStagger {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .page-transition-enter {
+    animation: fadeInSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
   /* ── Responsive ───────────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    .dna-dashboard-grid, .interview-grid {
+      grid-template-columns: 1fr;
+    }
+  }
   @media (max-width: 1024px) {
     .main-wrap { margin-left: 0 !important; }
     .mob-menu-btn { display: flex !important; }

@@ -56,19 +56,26 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
   const atsGrade = auditData?.atsGrade || 'A';
   const skillsCount = dnaData?.topSkills?.length || 5;
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
-    <div style={{ padding: '24px 28px', color: 'var(--text-1)' }}>
+    <div style={{ padding: '24px 28px', color: 'var(--text-1)' }} className="page-transition-enter">
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 6px 0', letterSpacing: '-0.5px' }}>
-          Welcome back, {candidateName}! 👋
+          {getGreeting()}, {candidateName}! 👋
         </h1>
         <p style={{ fontSize: 13.5, color: 'var(--text-3)', margin: 0, lineHeight: 1.5 }}>
           Your central command console for profile optimization, job matches, and active application pipeline.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 18, marginBottom: 32 }}>
-        <div className="glass-card" style={{ padding: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 18, marginBottom: 32 }} className="animate-stagger-fade-up">
+        <div className="glass-card hover-card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <Award size={18} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
             <span style={{ fontSize: 11.5, fontWeight: 750, color: 'var(--teal)', letterSpacing: '1px' }}>PROFILE HEALTH</span>
@@ -84,7 +91,7 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
           </p>
         </div>
 
-        <div className="glass-card" style={{ padding: 20 }}>
+        <div className="glass-card hover-card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <Target size={18} color="#3b82f6" style={{ filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.3))' }} />
             <span style={{ fontSize: 11.5, fontWeight: 750, color: '#3b82f6', letterSpacing: '1px' }}>TARGET PROFILE</span>
@@ -97,13 +104,13 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
           </p>
         </div>
 
-        <div className="glass-card" style={{ padding: 20 }}>
+        <div className="glass-card hover-card" style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <TrendingUp size={18} color="#f59e0b" style={{ filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.3))' }} />
             <span style={{ fontSize: 11.5, fontWeight: 750, color: '#f59e0b', letterSpacing: '1px' }}>PIPELINE STATUS</span>
           </div>
           {loading ? (
-            <div style={{ fontSize: 12.5, color: 'var(--text-3)', padding: '6px 0' }}>Loading counters...</div>
+            <div className="skeleton-shimmer" style={{ height: 48, width: '100%', marginTop: 8, borderRadius: 8 }}></div>
           ) : (
             <div style={{ display: 'flex', gap: 16, padding: '2px 0' }}>
               <div>
@@ -125,8 +132,8 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }}>
-        <div className="glass-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20 }} className="animate-stagger-fade-up">
+        <div className="glass-card hover-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
               <UserCheck size={18} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} /> Resume Optimizer
@@ -153,7 +160,7 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
           </button>
         </div>
 
-        <div className="glass-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="glass-card hover-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Compass size={18} color="#3b82f6" style={{ filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.3))' }} /> Job Matches
@@ -161,9 +168,9 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 10, padding: 12, marginBottom: 16, minHeight: 76 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', marginBottom: 6, textTransform: 'uppercase' }}>Live Vacancies Match Feed</div>
               {liveLoading ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-                  <div className="spinner spinner-teal" style={{ width: 14, height: 14 }} />
-                  <span style={{ fontSize: 11.5, color: 'var(--text-3)' }}>Scanning openings...</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '4px 0' }}>
+                  <div className="skeleton-shimmer" style={{ height: 28, width: '100%', borderRadius: 6 }}></div>
+                  <div className="skeleton-shimmer" style={{ height: 28, width: '100%', borderRadius: 6 }}></div>
                 </div>
               ) : liveJobs.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -189,7 +196,7 @@ export default function ConsoleOverview({ onNavigate, resumeData, dnaData, audit
           </button>
         </div>
 
-        <div className="glass-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="glass-card hover-card" style={{ padding: 22, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Briefcase size={18} color="#f59e0b" style={{ filter: 'drop-shadow(0 0 6px rgba(245,158,11,0.3))' }} /> Pipeline Tracker

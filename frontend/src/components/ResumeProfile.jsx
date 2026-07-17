@@ -693,8 +693,8 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }}>
-                <div className="glass-card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.05), rgba(59, 130, 246, 0.03))', border: '1px solid rgba(0, 201, 167, 0.15)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }} className="animate-stagger-fade-up">
+                <div className="glass-card hover-card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.05), rgba(59, 130, 246, 0.03))', border: '1px solid rgba(0, 201, 167, 0.15)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--teal)', letterSpacing: '0.8px' }}>ATS COMPATIBILITY SCORE</span>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>VERIFIED</span>
@@ -718,7 +718,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                   </div>
                 </div>
 
-                <div className="glass-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div className="glass-card hover-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>
                     <h3 style={{ fontSize: 13, fontWeight: 900, color: 'var(--text-1)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <ListChecks size={15} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />

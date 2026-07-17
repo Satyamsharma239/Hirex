@@ -1038,9 +1038,10 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
 
       {/* Main Jobs Listing */}
       {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '80px 0' }}>
-          <div className="spinner spinner-teal" style={{ width: 44, height: 44 }} />
-          <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Searching open positions...</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="skeleton-shimmer" style={{ height: 180, borderRadius: 16 }}></div>
+          ))}
         </div>
       ) : (
         <>
@@ -1051,7 +1052,7 @@ export default function JobDiscovery({ initialRole, initialSkills, resumeAnalyze
               <p style={{ fontSize: 13, marginTop: 4 }}>Try clearing some filters or searching a different role.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }} className="animate-stagger-fade-up">
               {filtered.map(job => (
                 <JobCard 
                   key={job.id} 

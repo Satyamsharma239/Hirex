@@ -7,6 +7,8 @@ import {
   Briefcase, Star, Lightbulb, ExternalLink,
   ListChecks, Award, Bookmark, ShieldAlert, Download, Printer, Zap
 } from 'lucide-react';
+import { NeonGradientCard } from './ui/NeonGradientCard';
+import { ParticleButton } from './ui/ParticleButton';
 
 const fallbackBrand = {
   name: "Satyam Sharma",
@@ -684,17 +686,17 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                     <Briefcase size={14} color="var(--teal)" />
                     Update Experience
                   </button>
-                  <button onClick={handleUploadClick} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', padding: '10px 14px', fontSize: 13 }}>
+                  <ParticleButton onClick={handleUploadClick} className="btn btn-ghost" style={{ width: '100%', justifyContent: 'flex-start', padding: '10px 14px', fontSize: 13 }}>
                     <Upload size={14} color="var(--teal)" />
                     Upload New Resume
-                  </button>
+                  </ParticleButton>
                 </div>
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20 }} className="animate-stagger-fade-up">
-                <div className="glass-card hover-card" style={{ padding: 24, background: 'linear-gradient(135deg, rgba(0, 201, 167, 0.05), rgba(59, 130, 246, 0.03))', border: '1px solid rgba(0, 201, 167, 0.15)' }}>
+                <NeonGradientCard className="p-6">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                     <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--teal)', letterSpacing: '0.8px' }}>ATS COMPATIBILITY SCORE</span>
                     <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700 }}>VERIFIED</span>
@@ -716,9 +718,9 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                   <div style={{ width: '100%', height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, marginTop: 18, overflow: 'hidden' }}>
                     <div style={{ width: `${activeAudit.atsScore}%`, height: '100%', background: 'linear-gradient(90deg, #00c9a7, #3b82f6)', borderRadius: 3 }} />
                   </div>
-                </div>
+                </NeonGradientCard>
 
-                <div className="glass-card hover-card" style={{ padding: 20, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <NeonGradientCard className="p-5 flex flex-col justify-between">
                   <div>
                     <h3 style={{ fontSize: 13, fontWeight: 900, color: 'var(--text-1)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                       <ListChecks size={15} color="var(--teal)" style={{ filter: 'drop-shadow(0 0 6px var(--teal-glow))' }} />
@@ -742,7 +744,7 @@ export default function ResumeProfile({ onDiscoverJobs, resumeText, resumeData, 
                   <div style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.4, marginTop: 10 }}>
                     Structural analysis passed recruiter compliance checks.
                   </div>
-                </div>
+                </NeonGradientCard>
               </div>
 
               <div className="glass-card" style={{ padding: 20 }}>

@@ -9,7 +9,8 @@ import {
   CheckCircle2, Send, Copy, Check, User,
   ChevronDown, ChevronUp, AlertCircle, Sparkles, Brain, Ghost, Bell, ExternalLink
 } from 'lucide-react';
-
+import { ParticleButton } from './ui/ParticleButton';
+import { NeonGradientCard } from './ui/NeonGradientCard';
 // ── Constants ──────────────────────────────────────────────────────
 const CITIES = ['Any Location', 'Bangalore', 'Hyderabad', 'Mumbai', 'Pune', 'Chennai', 'Delhi NCR', 'Noida', 'Jaipur', 'Ahmedabad', 'Kolkata', 'Remote'];
 const EXP_OPTS = ['Fresher (0 yr)', '0-1 year', '1-2 years', '2-4 years', '4+ years'];
@@ -408,19 +409,15 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave, onApply }
   }
 
   return (
-    <div style={{
-      background: 'var(--bg-glass)',
-      backdropFilter: 'blur(16px)',
-      WebkitBackdropFilter: 'blur(16px)',
-      border: '1px solid var(--border-glass)',
-      borderRadius: 16,
-      padding: 24,
-      position: 'relative',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 16,
-      transition: 'all 0.3s ease'
-    }} className="glass-card">
+    <NeonGradientCard className="w-full h-full">
+      <div style={{
+        padding: 24,
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+        height: '100%'
+      }}>
       {/* Bookmark Icon */}
       <button 
         onClick={(e) => { e.stopPropagation(); onToggleSave(job); }} 
@@ -497,13 +494,13 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave, onApply }
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-        <button 
+        <ParticleButton 
           onClick={(e) => { e.stopPropagation(); onApply(job); }} 
           className="btn btn-primary" 
           style={{ width: '100%', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', fontWeight: 700, padding: '10px', display: 'flex', gap: 6, alignItems: 'center', borderRadius: 10, fontSize: 13 }}
         >
           <Zap size={14} /> 1-Click Apply
-        </button>
+        </ParticleButton>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => onOutreach(job)} className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
             <Send size={13} /> Outreach
@@ -513,7 +510,8 @@ function JobCard({ job, onOutreach, onSimulate, isSaved, onToggleSave, onApply }
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </NeonGradientCard>
   );
 }
 
